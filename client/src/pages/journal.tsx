@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { JournalEntryCard } from "@/components/journal-entry-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -13,58 +15,22 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { JournalEntry } from "@shared/schema";
 
-type JournalEntry = {
-  id: string;
-  title: string;
-  excerpt: string;
-  date: string;
-  source: "library" | "gym" | "toolkit" | "personal";
-  tags: string[];
-  fullContent: string;
-};
-
-const initialEntries: JournalEntry[] = [
-  {
-    id: "1",
-    title: "Key insight from Slack case study",
-    excerpt: "The most interesting takeaway was how they pivoted from a gaming company. The team recognized that their internal tool had more value than the game itself...",
-    date: "Today",
-    source: "library",
-    tags: ["pivots", "SaaS", "product-market-fit"],
-    fullContent: "The most interesting takeaway was how they pivoted from a gaming company. The team recognized that their internal tool had more value than the game itself. This taught me to always pay attention to what users are actually engaging with, not what we intended them to use.",
-  },
-  {
-    id: "2",
-    title: "Prioritization exercise reflection",
-    excerpt: "I learned that I tend to overweight CEO preferences in my prioritization. Need to balance stakeholder input with user data...",
-    date: "Yesterday",
-    source: "gym",
-    tags: ["prioritization", "stakeholder-management"],
-    fullContent: "I learned that I tend to overweight CEO preferences in my prioritization. Need to balance stakeholder input with user data. The AI feedback helped me see that I should be more confident in advocating for user needs.",
-  },
-  {
-    id: "3",
-    title: "RICE scoring notes",
-    excerpt: "Finally understand why confidence matters so much in RICE. Without it, we'd just be making up numbers...",
-    date: "3 days ago",
-    source: "toolkit",
-    tags: ["frameworks", "prioritization", "RICE"],
-    fullContent: "Finally understand why confidence matters so much in RICE. Without it, we'd just be making up numbers. I'm going to start tracking my estimates vs actual outcomes to improve my confidence calibration over time.",
-  },
-  {
-    id: "4",
-    title: "Random product observation",
-    excerpt: "Noticed how Uber shows surge pricing. They're transparent about the multiplier but make you feel like you're making a choice...",
-    date: "1 week ago",
-    source: "personal",
-    tags: ["pricing", "UX", "transparency"],
-    fullContent: "Noticed how Uber shows surge pricing. They're transparent about the multiplier but make you feel like you're making a choice by showing lower prices for waiting. Classic example of giving users control while still managing demand.",
-  },
-];
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString();
+}
 
 export default function Journal() {
-  const [entries, setEntries] = useState<JournalEntry[]>(initialEntries);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
@@ -72,11 +38,67 @@ export default function Journal() {
   const [newContent, setNewContent] = useState("");
   const { toast } = useToast();
 
-  const filteredEntries = entries.filter((entry) =>
+  const { data: entries, isLoading } = useQuery<JournalEntry[]>({
+    queryKey: ["/api/journal"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { title: string; content: string }) => {
+      const res = await apiRequest("POST", "/api/journal", {
+        ...data,
+        source: "personal",
+        tags: [],
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
+      setIsDialogOpen(false);
+      setNewTitle("");
+      setNewContent("");
+      toast({
+        title: "Entry created",
+        description: "Your new journal entry has been saved.",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { title: string; content: string } }) => {
+      const res = await apiRequest("PATCH", `/api/journal/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
+      setIsDialogOpen(false);
+      setEditingEntry(null);
+      setNewTitle("");
+      setNewContent("");
+      toast({
+        title: "Entry updated",
+        description: "Your changes have been saved.",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/journal/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
+      toast({
+        title: "Entry deleted",
+        description: "Your journal entry has been removed.",
+      });
+    },
+  });
+
+  const filteredEntries = entries?.filter((entry) =>
     entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     entry.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
     entry.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  ) || [];
 
   const handleNewEntry = () => {
     setEditingEntry(null);
@@ -88,56 +110,33 @@ export default function Journal() {
   const handleEditEntry = (entry: JournalEntry) => {
     setEditingEntry(entry);
     setNewTitle(entry.title);
-    setNewContent(entry.fullContent);
+    setNewContent(entry.content);
     setIsDialogOpen(true);
   };
 
   const handleDeleteEntry = (id: string) => {
-    setEntries(entries.filter((e) => e.id !== id));
-    toast({
-      title: "Entry deleted",
-      description: "Your journal entry has been removed.",
-    });
+    deleteMutation.mutate(id);
   };
 
   const handleSaveEntry = () => {
     if (!newTitle.trim() || !newContent.trim()) return;
 
     if (editingEntry) {
-      setEntries(entries.map((e) =>
-        e.id === editingEntry.id
-          ? { ...e, title: newTitle, excerpt: newContent.slice(0, 150) + "...", fullContent: newContent }
-          : e
-      ));
-      toast({
-        title: "Entry updated",
-        description: "Your changes have been saved.",
+      updateMutation.mutate({
+        id: editingEntry.id,
+        data: { title: newTitle, content: newContent },
       });
     } else {
-      const newEntry: JournalEntry = {
-        id: Date.now().toString(),
-        title: newTitle,
-        excerpt: newContent.slice(0, 150) + "...",
-        date: "Just now",
-        source: "personal",
-        tags: [],
-        fullContent: newContent,
-      };
-      setEntries([newEntry, ...entries]);
-      toast({
-        title: "Entry created",
-        description: "Your new journal entry has been saved.",
-      });
+      createMutation.mutate({ title: newTitle, content: newContent });
     }
-
-    setIsDialogOpen(false);
   };
 
   const groupedByDate = filteredEntries.reduce((acc, entry) => {
-    if (!acc[entry.date]) {
-      acc[entry.date] = [];
+    const dateLabel = formatDate(entry.date);
+    if (!acc[dateLabel]) {
+      acc[dateLabel] = [];
     }
-    acc[entry.date].push(entry);
+    acc[dateLabel].push(entry);
     return acc;
   }, {} as Record<string, JournalEntry[]>);
 
@@ -167,27 +166,42 @@ export default function Journal() {
         />
       </div>
 
-      <div className="space-y-8">
-        {Object.entries(groupedByDate).map(([date, dateEntries]) => (
-          <div key={date} className="space-y-4">
-            <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2">
-              {date}
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {dateEntries.map((entry) => (
-                <JournalEntryCard
-                  key={entry.id}
-                  {...entry}
-                  onEdit={() => handleEditEntry(entry)}
-                  onDelete={() => handleDeleteEntry(entry.id)}
-                />
-              ))}
-            </div>
+      {isLoading ? (
+        <div className="space-y-8">
+          <Skeleton className="h-8 w-24" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-48" />
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {Object.entries(groupedByDate).map(([date, dateEntries]) => (
+            <div key={date} className="space-y-4">
+              <h2 className="text-sm font-medium text-muted-foreground sticky top-0 bg-background py-2">
+                {date}
+              </h2>
+              <div className="grid gap-4 md:grid-cols-2">
+                {dateEntries.map((entry) => (
+                  <JournalEntryCard
+                    key={entry.id}
+                    title={entry.title}
+                    excerpt={entry.excerpt}
+                    date={formatDate(entry.date)}
+                    source={entry.source}
+                    tags={entry.tags}
+                    onEdit={() => handleEditEntry(entry)}
+                    onDelete={() => handleDeleteEntry(entry.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {filteredEntries.length === 0 && (
+      {!isLoading && filteredEntries.length === 0 && (
         <div className="text-center py-12">
           <p className="text-muted-foreground">
             {searchQuery ? "No entries match your search." : "Start your learning journal with your first entry!"}
@@ -229,7 +243,11 @@ export default function Journal() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveEntry} disabled={!newTitle.trim() || !newContent.trim()} data-testid="button-save-entry">
+            <Button 
+              onClick={handleSaveEntry} 
+              disabled={!newTitle.trim() || !newContent.trim() || createMutation.isPending || updateMutation.isPending} 
+              data-testid="button-save-entry"
+            >
               {editingEntry ? "Save Changes" : "Create Entry"}
             </Button>
           </DialogFooter>

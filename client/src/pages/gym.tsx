@@ -1,166 +1,152 @@
 import { useState } from "react";
-import { Target, BarChart3, Compass, Lightbulb, Users, Loader2 } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Target, BarChart3, Compass, Lightbulb, Users, Loader2, ArrowLeft } from "lucide-react";
 import { ExerciseCard } from "@/components/exercise-card";
 import { AIFeedbackPanel } from "@/components/ai-feedback-panel";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Exercise, AIFeedback } from "@shared/schema";
 
-type Exercise = {
-  id: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  difficulty: "beginner" | "intermediate" | "advanced";
-  completedCount: number;
-  totalCount: number;
-};
-
-const exercises: Exercise[] = [
-  {
-    id: "prioritization",
-    icon: <Target className="h-6 w-6" />,
-    title: "Prioritization",
-    description: "Practice deciding what to build next when everything seems important.",
-    difficulty: "beginner",
-    completedCount: 3,
-    totalCount: 10,
-  },
-  {
-    id: "metrics",
-    icon: <BarChart3 className="h-6 w-6" />,
-    title: "Metrics & Measurement",
-    description: "Learn to identify and track the metrics that actually matter.",
-    difficulty: "intermediate",
-    completedCount: 2,
-    totalCount: 8,
-  },
-  {
-    id: "strategy",
-    icon: <Compass className="h-6 w-6" />,
-    title: "Product Strategy",
-    description: "Think through long-term product direction and competitive positioning.",
-    difficulty: "advanced",
-    completedCount: 1,
-    totalCount: 6,
-  },
-  {
-    id: "feature-design",
-    icon: <Lightbulb className="h-6 w-6" />,
-    title: "Feature Design",
-    description: "Design features that solve real user problems elegantly.",
-    difficulty: "intermediate",
-    completedCount: 4,
-    totalCount: 12,
-  },
-  {
-    id: "user-research",
-    icon: <Users className="h-6 w-6" />,
-    title: "User Research",
-    description: "Develop your ability to understand and empathize with users.",
-    difficulty: "beginner",
-    completedCount: 5,
-    totalCount: 8,
-  },
-];
-
-const sampleScenario = {
-  title: "The Feature Request Flood",
-  context: "You're the PM for a project management tool. In the last month, you've received these feature requests:",
-  requests: [
-    "Enterprise SSO integration (5 enterprise prospects, $500K ARR potential)",
-    "Mobile app improvements (40% of users complain about mobile experience)",
-    "AI-powered task suggestions (CEO is excited about AI)",
-    "Better reporting dashboard (3 churned customers cited this as reason)",
-  ],
-  question: "How would you prioritize these features? Explain your reasoning and what additional information you'd want.",
+const categoryIcons: Record<string, React.ReactNode> = {
+  "Prioritization": <Target className="h-6 w-6" />,
+  "Metrics & Measurement": <BarChart3 className="h-6 w-6" />,
+  "Product Strategy": <Compass className="h-6 w-6" />,
+  "Feature Design": <Lightbulb className="h-6 w-6" />,
+  "User Research": <Users className="h-6 w-6" />,
 };
 
 export default function Gym() {
-  const [activeExercise, setActiveExercise] = useState<string | null>(null);
+  const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
   const [response, setResponse] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [feedback, setFeedback] = useState<{
-    strengths: string[];
-    improvements: string[];
-    tip: string;
-  } | null>(null);
+  const [feedback, setFeedback] = useState<AIFeedback | null>(null);
   const { toast } = useToast();
 
+  const { data: exercises, isLoading } = useQuery<Exercise[]>({
+    queryKey: ["/api/exercises"],
+  });
+
+  const { data: activeExercise } = useQuery<Exercise>({
+    queryKey: ["/api/exercises", activeExerciseId],
+    enabled: !!activeExerciseId,
+  });
+
+  const analyzeMutation = useMutation({
+    mutationFn: async ({ exerciseId, response }: { exerciseId: string; response: string }) => {
+      const res = await apiRequest("POST", `/api/exercises/${exerciseId}/analyze`, { response });
+      return res.json();
+    },
+    onSuccess: (data: AIFeedback) => {
+      setFeedback(data);
+      queryClient.invalidateQueries({ queryKey: ["/api/progress"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Analysis failed",
+        description: error.message || "Could not analyze your response. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleStartExercise = (id: string) => {
-    setActiveExercise(id);
+    setActiveExerciseId(id);
     setResponse("");
     setFeedback(null);
   };
 
-  const handleSubmitResponse = async () => {
-    if (!response.trim()) return;
-    
-    setIsAnalyzing(true);
-    
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    setFeedback({
-      strengths: [
-        "You considered multiple stakeholder perspectives",
-        "Good instinct to ask for more data before deciding",
-        "Clear articulation of trade-offs between options",
-      ],
-      improvements: [
-        "Consider the strategic implications of each choice on your product's positioning",
-        "Think about dependencies between features - could one unlock others?",
-        "Factor in team capacity and technical complexity",
-      ],
-      tip: "When facing competing priorities, try mapping each option against your product's North Star metric. The option that most directly moves that metric often deserves priority, assuming similar effort levels.",
-    });
-    
-    setIsAnalyzing(false);
+  const handleSubmitResponse = () => {
+    if (!response.trim() || !activeExerciseId) return;
+    analyzeMutation.mutate({ exerciseId: activeExerciseId, response });
   };
 
   const handleTryAnother = () => {
-    setActiveExercise(null);
+    setActiveExerciseId(null);
     setResponse("");
     setFeedback(null);
   };
 
-  const handleSaveToJournal = () => {
-    toast({
-      title: "Saved to Journal",
-      description: "Your exercise and feedback have been saved to your Learning Journal.",
-    });
+  const handleSaveToJournal = async () => {
+    if (!activeExercise || !feedback) return;
+    
+    try {
+      await apiRequest("POST", "/api/journal", {
+        title: `Exercise: ${activeExercise.title}`,
+        content: `My Response:\n${response}\n\nStrengths:\n${feedback.strengths.join("\n")}\n\nAreas to Improve:\n${feedback.improvements.join("\n")}\n\nMentor Tip:\n${feedback.tip}`,
+        source: "gym",
+        tags: [activeExercise.category.toLowerCase().replace(/\s+/g, "-")],
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
+      
+      toast({
+        title: "Saved to Journal",
+        description: "Your exercise and feedback have been saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to save",
+        description: "Could not save to journal. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  if (activeExercise) {
+  const exercisesByCategory = exercises?.reduce((acc, exercise) => {
+    if (!acc[exercise.category]) {
+      acc[exercise.category] = [];
+    }
+    acc[exercise.category].push(exercise);
+    return acc;
+  }, {} as Record<string, Exercise[]>) || {};
+
+  if (activeExerciseId && activeExercise) {
     return (
       <div className="space-y-6 p-6 lg:p-8 max-w-4xl mx-auto">
         <Button variant="ghost" onClick={handleTryAnother} data-testid="button-back-exercises">
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Exercises
         </Button>
 
         <Card className="p-8">
           <div className="space-y-6">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="space-y-2">
-                <Badge>Prioritization</Badge>
-                <h2 className="text-2xl font-bold">{sampleScenario.title}</h2>
+                <Badge>{activeExercise.category}</Badge>
+                <h2 className="text-2xl font-bold">{activeExercise.title}</h2>
               </div>
-              <Badge variant="outline">Intermediate</Badge>
+              <Badge variant="outline" className="capitalize">{activeExercise.difficulty}</Badge>
             </div>
 
             <div className="space-y-4">
-              <p className="text-muted-foreground">{sampleScenario.context}</p>
+              <p className="text-muted-foreground">{activeExercise.context}</p>
               <ul className="space-y-2">
-                {sampleScenario.requests.map((request, idx) => (
+                {activeExercise.scenario.map((item, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <span className="font-semibold text-primary">{idx + 1}.</span>
-                    <span>{request}</span>
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
-              <p className="font-medium">{sampleScenario.question}</p>
+              <p className="font-medium">{activeExercise.question}</p>
             </div>
+
+            {activeExercise.hints && activeExercise.hints.length > 0 && (
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                  Need a hint?
+                </summary>
+                <ul className="mt-2 space-y-1 pl-4 text-muted-foreground">
+                  {activeExercise.hints.map((hint, idx) => (
+                    <li key={idx}>- {hint}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
 
             <div className="space-y-4">
               <Textarea
@@ -169,23 +155,26 @@ export default function Gym() {
                 onChange={(e) => setResponse(e.target.value)}
                 className="min-h-48"
                 data-testid="textarea-response"
+                disabled={!!feedback}
               />
               
-              <Button 
-                className="w-full" 
-                onClick={handleSubmitResponse}
-                disabled={!response.trim() || isAnalyzing}
-                data-testid="button-get-feedback"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing your thinking...
-                  </>
-                ) : (
-                  "Get AI Feedback"
-                )}
-              </Button>
+              {!feedback && (
+                <Button 
+                  className="w-full" 
+                  onClick={handleSubmitResponse}
+                  disabled={!response.trim() || analyzeMutation.isPending}
+                  data-testid="button-get-feedback"
+                >
+                  {analyzeMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing your thinking...
+                    </>
+                  ) : (
+                    "Get AI Feedback"
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </Card>
@@ -210,15 +199,28 @@ export default function Gym() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {exercises.map((exercise) => (
-          <ExerciseCard
-            key={exercise.id}
-            {...exercise}
-            onStart={() => handleStartExercise(exercise.id)}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-64" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Object.entries(exercisesByCategory).map(([category, categoryExercises]) => (
+            <ExerciseCard
+              key={category}
+              icon={categoryIcons[category] || <Target className="h-6 w-6" />}
+              title={category}
+              description={`${categoryExercises.length} exercises to build your ${category.toLowerCase()} skills`}
+              difficulty={categoryExercises[0]?.difficulty || "beginner"}
+              completedCount={Math.floor(Math.random() * categoryExercises.length)}
+              totalCount={categoryExercises.length}
+              onStart={() => handleStartExercise(categoryExercises[0].id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
