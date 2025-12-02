@@ -16,6 +16,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { downloadTemplate } from "@/lib/templates";
 import type { Framework } from "@shared/schema";
 
 const frameworkIcons: Record<string, React.ReactNode> = {
@@ -29,12 +31,21 @@ const frameworkIcons: Record<string, React.ReactNode> = {
 
 export default function Toolkit() {
   const [selectedFrameworkId, setSelectedFrameworkId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const { data: frameworks, isLoading } = useQuery<Framework[]>({
     queryKey: ["/api/frameworks"],
   });
 
   const selectedFramework = frameworks?.find(f => f.id === selectedFrameworkId);
+
+  const handleDownload = (frameworkId: string, frameworkTitle: string) => {
+    downloadTemplate(frameworkId, frameworkTitle);
+    toast({
+      title: "Template Downloaded",
+      description: `${frameworkTitle} template saved to your downloads.`,
+    });
+  };
 
   if (selectedFramework) {
     return (
@@ -53,7 +64,12 @@ export default function Toolkit() {
               <Badge>{selectedFramework.category}</Badge>
               <h1 className="text-2xl font-bold">{selectedFramework.title}</h1>
               <p className="text-muted-foreground">{selectedFramework.description}</p>
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => handleDownload(selectedFramework.id, selectedFramework.title)}
+                data-testid="button-download-template"
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Download Template
               </Button>
