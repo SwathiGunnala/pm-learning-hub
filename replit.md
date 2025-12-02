@@ -1,8 +1,8 @@
-# PM Brain Gym - Product Learning Hub
+# PM Learning Hub
 
 ## Overview
 
-PM Brain Gym is a product learning platform designed to help product managers develop their product sense through interactive exercises, case studies, and frameworks. The application combines educational content with gamification elements (streaks, progress tracking) to maintain user engagement while providing professional clarity in content organization.
+PM Learning Hub is a product learning platform designed to help product managers develop their product sense through interactive exercises, case studies, and frameworks. The application combines educational content with gamification elements (streaks, progress tracking) to maintain user engagement while providing professional clarity in content organization.
 
 The platform offers four main learning modules:
 - **Strategy Library**: Real-world case studies of product wins and failures

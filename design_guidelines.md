@@ -52,7 +52,7 @@
 ### Home Dashboard
 
 **Hero Section** (py-16):
-- Headline: "Your PM Brain Gym" (text-4xl, font-bold)
+- Headline: "Your PM Learning Hub" (text-4xl, font-bold)
 - Subheading: "Build product thinking muscle, one rep at a time" (text-xl)
 - Right-aligned image: Friendly illustration of person with lightbulb/dumbbells hybrid (40% width desktop)
 - Welcome back message with user name + streak count (flame icon + number)

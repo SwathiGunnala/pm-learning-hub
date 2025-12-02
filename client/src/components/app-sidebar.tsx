@@ -37,7 +37,7 @@ export function AppSidebar() {
             <Dumbbell className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-semibold text-lg">PM Brain Gym</h1>
+            <h1 className="font-semibold text-lg">PM Learning Hub</h1>
             <p className="text-xs text-muted-foreground">Build your product sense</p>
           </div>
         </div>

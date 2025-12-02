@@ -219,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let repoUrl: string;
 
       if (isNewRepo) {
-        const repo = await createRepository(repoName, description || "PM Brain Gym - Product Learning Hub", isPrivate);
+        const repo = await createRepository(repoName, description || "PM Learning Hub - Product Learning Platform", isPrivate);
         repoUrl = repo.html_url;
       } else {
         repoUrl = `https://github.com/${user.login}/${repoName}`;
@@ -238,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       execSync('git add -A', { stdio: 'pipe' });
       
       try {
-        execSync('git commit -m "Update: PM Brain Gym - Product Learning Hub"', { stdio: 'pipe' });
+        execSync('git commit -m "Update: PM Learning Hub"', { stdio: 'pipe' });
       } catch (e) {}
 
       const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;

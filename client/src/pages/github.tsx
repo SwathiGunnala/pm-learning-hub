@@ -16,8 +16,8 @@ type GitHubUser = {
 };
 
 export default function GitHubPage() {
-  const [repoName, setRepoName] = useState("pm-brain-gym");
-  const [description, setDescription] = useState("PM Brain Gym - Product Learning Hub for Product Managers");
+  const [repoName, setRepoName] = useState("pm-learning-hub");
+  const [description, setDescription] = useState("PM Learning Hub - Product Learning Platform for Product Managers");
   const [isPrivate, setIsPrivate] = useState(false);
   const [isNewRepo, setIsNewRepo] = useState(true);
   const [pushResult, setPushResult] = useState<{ success: boolean; repoUrl: string } | null>(null);
@@ -77,7 +77,7 @@ export default function GitHubPage() {
           Push to GitHub
         </h1>
         <p className="text-muted-foreground">
-          Save your PM Brain Gym project to your GitHub account
+          Save your PM Learning Hub project to your GitHub account
         </p>
       </div>
 
@@ -102,7 +102,7 @@ export default function GitHubPage() {
                 id="repoName"
                 value={repoName}
                 onChange={(e) => setRepoName(e.target.value)}
-                placeholder="pm-brain-gym"
+                placeholder="pm-learning-hub"
                 data-testid="input-repo-name"
               />
             </div>

@@ -34,7 +34,7 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Welcome back, Product Pro</p>
-              <h1 className="text-3xl lg:text-4xl font-bold">Your PM Brain Gym</h1>
+              <h1 className="text-3xl lg:text-4xl font-bold">Your PM Learning Hub</h1>
               <p className="text-lg text-muted-foreground">
                 Build product thinking muscle, one rep at a time
               </p>
