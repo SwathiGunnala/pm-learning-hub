@@ -2,6 +2,111 @@ import type { CaseStudy } from "@shared/schema";
 
 export const caseStudies: CaseStudy[] = [
   {
+    id: "basket-intelligence",
+    title: "Basket Intelligence: The AI Hidden in Every Shopping Cart",
+    company: "Caper AI & Retail Tech",
+    industry: "Retail",
+    outcome: "win",
+    preview: "Why understanding what shoppers add AND remove from their carts is the next frontier of retail AI.",
+    readTime: "10 min",
+    difficulty: "intermediate",
+    content: `Walk into any store during Black Friday and you'll notice something fascinating: shoppers constantly adding items to their carts, then removing a few, then adding again. By checkout, their baskets are much lighter than they were in the aisles.
+
+This exact pattern happens online too. We load our digital carts, hesitate, remove items, and check out with much less.
+
+This behavior gap is where a new category of AI is emerging - and it might be one of the most underrated product opportunities of the next decade.
+
+**What Is Basket Intelligence?**
+
+Basket intelligence is the AI-powered ability to understand what shoppers:
+
+- Add and remove
+- Compare and explore
+- Almost buy but don't
+- Buy together
+- Hesitate on
+
+It doesn't just look at transactions. It studies the micro-decisions inside the basket - where real intent and real friction live.
+
+For years, we focused on conversion. Basket intelligence flips the script to focus on the decision journey. And that's where 70% of decisions are made or lost.
+
+**Why Now?**
+
+Several major shifts make this the perfect time:
+
+1. **Attention spans are shrinking** - decisions happen faster
+2. **Decision fatigue is rising** - shoppers need guidance
+3. **Retail margins are thinner** - every recovered sale matters
+4. **AI can finally process behavioral signals in real-time**
+5. **Online and in-store shopping are merging**
+
+The basket has become the new battleground for revenue.
+
+**The Three Signal Types**
+
+Understanding basket behavior comes down to three signal categories:
+
+**Add Signals (Curiosity & Discovery)** - These reveal what shoppers want to explore. Even a temporary add equals early intent.
+
+**Remove Signals (Friction & Doubt)** - This is the goldmine. Removed items tell you about pricing discomfort, comparison confusion, unclear value, and low trust. Remove signals are unfiltered feedback.
+
+**Persist Signals (Real Intent)** - Items that stay in the cart across visits reflect genuine need, confidence, and loyalty.
+
+**New Metrics for PMs**
+
+If PMs treated the cart like a decision engine, we'd track:
+
+- **Basket Retention Rate (BRR)** - % of items that remain through the session
+- **Basket Exploration Depth (BED)** - how many add/remove cycles occur
+- **Hesitation Time** - time spent deciding before an add or remove
+- **Affinity Lift** - increase in purchase likelihood when a complementary item is suggested
+
+These metrics help you see the decision journey, not just the outcome.
+
+**Real-World Applications**
+
+In stores with smart carts (like Caper):
+- Add pasta → cart suggests sauces
+- Remove cereal → offer cheaper alternative
+- Add ingredients → auto-build recipes
+
+Online:
+- Repeated adds/removes → helpful nudges
+- Hesitation → show comparisons
+- High-intent items → bundle recommendations
+
+This isn't manipulation. It's reducing cognitive load so shoppers can make decisions with clarity.
+
+**The Revenue Impact**
+
+Industry data indicates:
+- Saving just 5% of removed items → 1-3% revenue increase
+- High-affinity item pairs → 30-40% higher order value
+- Most item removals are caused by confusion, not price
+- Helpful nudges increase completion rates by 8-15%
+
+Basket intelligence unlocks money companies don't even realize they're losing.
+
+**Beyond Retail**
+
+Anywhere users select, compare, or build a list... there's a "basket":
+
+- **Food Delivery**: Add biryani → suggest raita. Remove item twice → offer smaller size
+- **Travel**: Compare flights, remove add-ons → AI suggests cheaper days or upgrade bundles
+- **Fintech**: Users browse credit cards → AI explains APR differences based on spend patterns
+
+The basket isn't a feature. It's a mirror of customer psychology.
+
+**The Lesson**
+
+The basket isn't just a checkout tool - it's a truth-telling tool. Don't just look at conversion. Look at the gap between what users add and what they actually buy. That's your roadmap. That's your opportunity.`,
+    lessons: [
+      "The gap between what users add and what they buy reveals hidden friction and opportunity",
+      "Remove signals are unfiltered customer feedback - study them closely",
+      "Basket behavior applies beyond retail to any product with selection, comparison, or list-building",
+    ],
+  },
+  {
     id: "costco-samples",
     title: "Why Costco Gives Away So Much Free Food",
     company: "Costco",
