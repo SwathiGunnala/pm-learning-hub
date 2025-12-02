@@ -12,6 +12,7 @@ import Library from "@/pages/library";
 import Gym from "@/pages/gym";
 import Toolkit from "@/pages/toolkit";
 import Journal from "@/pages/journal";
+import GitHubPage from "@/pages/github";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/gym" component={Gym} />
       <Route path="/toolkit" component={Toolkit} />
       <Route path="/journal" component={Journal} />
+      <Route path="/github" component={GitHubPage} />
       <Route component={NotFound} />
     </Switch>
   );

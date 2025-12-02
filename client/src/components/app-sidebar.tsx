@@ -1,10 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { Home, Library, Dumbbell, Wrench, BookOpen, Flame } from "lucide-react";
+import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Github } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -19,6 +20,10 @@ const navItems = [
   { title: "Product Sense Gym", url: "/gym", icon: Dumbbell },
   { title: "Framework Toolkit", url: "/toolkit", icon: Wrench },
   { title: "Learning Journal", url: "/journal", icon: BookOpen },
+];
+
+const settingsItems = [
+  { title: "Push to GitHub", url: "/github", icon: Github },
 ];
 
 export function AppSidebar() {
@@ -45,6 +50,31 @@ export function AppSidebar() {
               {navItems.map((item) => {
                 const isActive = location === item.url || 
                   (item.url !== "/" && location.startsWith(item.url));
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive}
+                      data-testid={`nav-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      <Link href={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Settings</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {settingsItems.map((item) => {
+                const isActive = location === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
