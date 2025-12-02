@@ -6,7 +6,7 @@ import { RecommendationCard } from "@/components/recommendation-card";
 import { ProgressCard } from "@/components/progress-card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import heroImage from "@assets/generated_images/pm_brain_gym_illustration.png";
+import heroImage from "@assets/generated_images/brown_woman_collaborative_learning_space.png";
 import type { UserProgress, CaseStudy, Exercise } from "@shared/schema";
 
 export default function Dashboard() {
