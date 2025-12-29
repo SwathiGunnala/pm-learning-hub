@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import Dashboard from "@/pages/dashboard";
+import LessonPage from "@/pages/lesson";
 import Library from "@/pages/library";
 import Gym from "@/pages/gym";
 import Toolkit from "@/pages/toolkit";
@@ -19,6 +20,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/learn/:id" component={LessonPage} />
       <Route path="/library" component={Library} />
       <Route path="/gym" component={Gym} />
       <Route path="/toolkit" component={Toolkit} />

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getAuthenticatedUser, listUserRepos, createRepository } from "./github";
-import { analyzeExerciseResponse } from "./openai";
+import { analyzeExerciseResponse, analyzeChallengeResponse } from "./openai";
 import { exerciseResponseSchema, journalEntrySchema } from "@shared/schema";
 import { execSync } from "child_process";
 import { z } from "zod";
@@ -14,6 +14,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const progress = await storage.getUserProgress();
       res.json(progress);
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/curriculum", async (req, res) => {
+    try {
+      const curriculum = await storage.getCurriculum();
+      res.json(curriculum);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/lessons/:id", async (req, res) => {
+    try {
+      const lesson = await storage.getLesson(req.params.id);
+      if (!lesson) {
+        return res.status(404).json({ error: "Lesson not found" });
+      }
+      res.json(lesson);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/lessons/:id/complete", async (req, res) => {
+    try {
+      const lesson = await storage.getLesson(req.params.id);
+      if (!lesson) {
+        return res.status(404).json({ error: "Lesson not found" });
+      }
+      const progress = await storage.completeLesson(req.params.id, lesson.xpReward);
+      res.json(progress);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/daily-challenge", async (req, res) => {
+    try {
+      const challenge = await storage.getTodaysChallenge();
+      res.json(challenge);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/daily-challenge/submit", async (req, res) => {
+    try {
+      const challenge = await storage.getTodaysChallenge();
+      const { response } = req.body;
+      
+      if (!response || typeof response !== "string") {
+        return res.status(400).json({ error: "Response is required" });
+      }
+
+      const feedback = await analyzeChallengeResponse(
+        challenge.scenario,
+        challenge.question,
+        response
+      );
+
+      const progress = await storage.completeChallenge(challenge.xpReward);
+
+      res.json({ feedback, progress });
+    } catch (error: any) {
+      console.error("Challenge analysis error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -94,8 +161,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         exercise.question,
         response
       );
-
-      await storage.incrementExercisesCompleted();
 
       res.json(feedback);
     } catch (error: any) {

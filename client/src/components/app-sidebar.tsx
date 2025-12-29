@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Github } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Github, Zap, Trophy } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,6 +14,9 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import type { UserProgress } from "@shared/schema";
+import { levels } from "@shared/schema";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: Home },
@@ -28,6 +32,12 @@ const settingsItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+
+  const { data: progress } = useQuery<UserProgress>({
+    queryKey: ['/api/progress'],
+  });
+
+  const currentLevel = levels.find(l => l.level === (progress?.level || 1));
 
   return (
     <Sidebar>
@@ -95,7 +105,18 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 space-y-3">
+        <div className="space-y-2 px-2">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1">
+              <Trophy className="h-3 w-3 text-amber-500" />
+              <span className="font-medium">{currentLevel?.title || "PM Curious"}</span>
+            </div>
+            <span className="text-muted-foreground">{progress?.levelProgress || 0}%</span>
+          </div>
+          <Progress value={progress?.levelProgress || 0} className="h-1.5" />
+        </div>
+
         <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">
@@ -104,9 +125,15 @@ export function AppSidebar() {
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">Product Pro</p>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Flame className="h-3 w-3 text-orange-500" />
-              <span>7 day streak</span>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Flame className="h-3 w-3 text-orange-500" />
+                <span>{progress?.streakDays || 0} days</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Zap className="h-3 w-3 text-purple-500" />
+                <span>{progress?.totalXp || 0} XP</span>
+              </div>
             </div>
           </div>
         </div>
