@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Search, Filter, TrendingUp, TrendingDown, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CaseStudyCard } from "@/components/case-study-card";
@@ -11,61 +11,134 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { CaseStudy } from "@shared/schema";
 
-const filters = ["All", "Wins", "Fails", "SaaS", "Entertainment", "Productivity", "Social Media", "Real Estate"];
+const outcomeFilters = [
+  { label: "All Outcomes", value: "all", icon: BookOpen },
+  { label: "Wins", value: "win", icon: TrendingUp },
+  { label: "Fails", value: "fail", icon: TrendingDown },
+];
+
+const difficultyFilters = ["All Levels", "Beginner", "Intermediate", "Advanced"];
 
 export default function Library() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [outcomeFilter, setOutcomeFilter] = useState("all");
+  const [difficultyFilter, setDifficultyFilter] = useState("All Levels");
+  const [industryFilter, setIndustryFilter] = useState("All Industries");
   const [selectedCase, setSelectedCase] = useState<CaseStudy | null>(null);
 
   const { data: caseStudies, isLoading } = useQuery<CaseStudy[]>({
     queryKey: ["/api/case-studies"],
   });
 
-  const filteredCases = caseStudies?.filter((study) => {
-    const matchesSearch = study.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      study.company.toLowerCase().includes(searchQuery.toLowerCase());
+  const industries = useMemo(() => {
+    if (!caseStudies) return ["All Industries"];
+    const unique = Array.from(new Set(caseStudies.map(s => s.industry))).sort();
+    return ["All Industries", ...unique];
+  }, [caseStudies]);
+
+  const filteredCases = useMemo(() => {
+    if (!caseStudies) return [];
     
-    if (activeFilter === "All") return matchesSearch;
-    if (activeFilter === "Wins") return matchesSearch && study.outcome === "win";
-    if (activeFilter === "Fails") return matchesSearch && study.outcome === "fail";
-    return matchesSearch && study.industry === activeFilter;
-  }) || [];
+    return caseStudies.filter((study) => {
+      const matchesSearch = searchQuery === "" || 
+        study.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        study.company.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesOutcome = outcomeFilter === "all" || study.outcome === outcomeFilter;
+      const matchesDifficulty = difficultyFilter === "All Levels" || 
+        study.difficulty?.toLowerCase() === difficultyFilter.toLowerCase();
+      const matchesIndustry = industryFilter === "All Industries" || study.industry === industryFilter;
+      
+      return matchesSearch && matchesOutcome && matchesDifficulty && matchesIndustry;
+    });
+  }, [caseStudies, searchQuery, outcomeFilter, difficultyFilter, industryFilter]);
+
+  const stats = useMemo(() => {
+    if (!caseStudies) return { total: 0, wins: 0, fails: 0 };
+    return {
+      total: caseStudies.length,
+      wins: caseStudies.filter(s => s.outcome === "win").length,
+      fails: caseStudies.filter(s => s.outcome === "fail").length,
+    };
+  }, [caseStudies]);
 
   return (
     <div className="space-y-6 p-6 lg:p-8">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Strategy Library</h1>
         <p className="text-muted-foreground">
-          Learn from real product wins and fails across industries
+          Learn from {stats.total} real product case studies - {stats.wins} wins, {stats.fails} fails
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {filters.map((filter) => (
+      <div className="flex flex-wrap gap-2 mb-4">
+        {outcomeFilters.map((filter) => {
+          const Icon = filter.icon;
+          return (
             <Badge
-              key={filter}
-              variant={activeFilter === filter ? "default" : "outline"}
-              className="cursor-pointer px-4 py-2"
-              onClick={() => setActiveFilter(filter)}
-              data-testid={`filter-${filter.toLowerCase()}`}
+              key={filter.value}
+              variant={outcomeFilter === filter.value ? "default" : "outline"}
+              className="cursor-pointer px-4 py-2 gap-1"
+              onClick={() => setOutcomeFilter(filter.value)}
+              data-testid={`filter-outcome-${filter.value}`}
             >
-              {filter}
+              <Icon className="h-3 w-3" />
+              {filter.label}
             </Badge>
-          ))}
-        </div>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search cases..."
+            placeholder="Search by company or title..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
             data-testid="input-search-cases"
           />
+        </div>
+        
+        <Select value={industryFilter} onValueChange={setIndustryFilter}>
+          <SelectTrigger className="w-full sm:w-48" data-testid="select-industry">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Industry" />
+          </SelectTrigger>
+          <SelectContent>
+            {industries.map((industry) => (
+              <SelectItem key={industry} value={industry}>
+                {industry}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+          <SelectTrigger className="w-full sm:w-40" data-testid="select-difficulty">
+            <SelectValue placeholder="Difficulty" />
+          </SelectTrigger>
+          <SelectContent>
+            {difficultyFilters.map((level) => (
+              <SelectItem key={level} value={level}>
+                {level}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="text-sm text-muted-foreground ml-auto">
+          Showing {filteredCases.length} of {stats.total} case studies
         </div>
       </div>
 
