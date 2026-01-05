@@ -1,4 +1,77 @@
 import { z } from "zod";
+import { pgTable, varchar, text, timestamp, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+
+export * from "./models/auth";
+
+export const subscriptions = pgTable("subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  plan: varchar("plan", { enum: ["free", "pro", "premium"] }).notNull().default("free"),
+  status: varchar("status", { enum: ["active", "cancelled", "expired", "past_due"] }).notNull().default("active"),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = typeof subscriptions.$inferInsert;
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const userActivities = pgTable("user_activities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  activityType: varchar("activity_type").notNull(),
+  entityType: varchar("entity_type"),
+  entityId: varchar("entity_id"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type UserActivity = typeof userActivities.$inferSelect;
+export type InsertUserActivity = typeof userActivities.$inferInsert;
+export const insertUserActivitySchema = createInsertSchema(userActivities).omit({ id: true, createdAt: true });
+
+export const supportTickets = pgTable("support_tickets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  subject: varchar("subject").notNull(),
+  description: text("description").notNull(),
+  category: varchar("category", { enum: ["bug", "feature", "billing", "general"] }).notNull().default("general"),
+  priority: varchar("priority", { enum: ["low", "medium", "high", "urgent"] }).notNull().default("medium"),
+  status: varchar("status", { enum: ["open", "in_progress", "resolved", "closed"] }).notNull().default("open"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = typeof supportTickets.$inferInsert;
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const userProgress2 = pgTable("user_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  streakDays: integer("streak_days").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
+  totalXp: integer("total_xp").notNull().default(0),
+  level: integer("level").notNull().default(1),
+  levelProgress: integer("level_progress").notNull().default(0),
+  lessonsCompleted: jsonb("lessons_completed").$type<string[]>().default([]),
+  unitsCompleted: jsonb("units_completed").$type<string[]>().default([]),
+  challengesCompleted: integer("challenges_completed").notNull().default(0),
+  lastActivityDate: varchar("last_activity_date"),
+  emailNotifications: boolean("email_notifications").notNull().default(true),
+  streakReminders: boolean("streak_reminders").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type UserProgress2 = typeof userProgress2.$inferSelect;
+export type InsertUserProgress2 = typeof userProgress2.$inferInsert;
 
 export const caseStudySchema = z.object({
   id: z.string(),

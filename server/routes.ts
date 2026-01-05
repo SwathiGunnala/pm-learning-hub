@@ -3,11 +3,117 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getAuthenticatedUser, listUserRepos, createRepository } from "./github";
 import { analyzeExerciseResponse, analyzeChallengeResponse } from "./openai";
-import { exerciseResponseSchema, journalEntrySchema } from "@shared/schema";
+import { exerciseResponseSchema, journalEntrySchema, insertSupportTicketSchema } from "@shared/schema";
 import { execSync } from "child_process";
 import { z } from "zod";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { db } from "./db";
+import { subscriptions, userActivities, supportTickets, userProgress2 } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  await setupAuth(app);
+  registerAuthRoutes(app);
+
+  app.get("/api/subscription", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const [subscription] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId));
+      if (!subscription) {
+        const [newSub] = await db.insert(subscriptions).values({ userId, plan: "free" }).returning();
+        return res.json(newSub);
+      }
+      res.json(subscription);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/user-progress-db", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      let [progress] = await db.select().from(userProgress2).where(eq(userProgress2.userId, userId));
+      if (!progress) {
+        [progress] = await db.insert(userProgress2).values({ 
+          userId, 
+          streakDays: 1,
+          longestStreak: 1,
+          totalXp: 0,
+          level: 1,
+          levelProgress: 0,
+          lessonsCompleted: [],
+          unitsCompleted: [],
+          challengesCompleted: 0,
+          lastActivityDate: new Date().toISOString().split('T')[0],
+        }).returning();
+      }
+      res.json(progress);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/user-settings", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { emailNotifications, streakReminders } = req.body;
+      const [updated] = await db.update(userProgress2)
+        .set({ emailNotifications, streakReminders, updatedAt: new Date() })
+        .where(eq(userProgress2.userId, userId))
+        .returning();
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/activity", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { activityType, entityType, entityId, metadata } = req.body;
+      const [activity] = await db.insert(userActivities).values({
+        userId, activityType, entityType, entityId, metadata
+      }).returning();
+      res.json(activity);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/activities", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const activities = await db.select().from(userActivities)
+        .where(eq(userActivities.userId, userId))
+        .orderBy(userActivities.createdAt);
+      res.json(activities);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/tickets", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const tickets = await db.select().from(supportTickets)
+        .where(eq(supportTickets.userId, userId))
+        .orderBy(supportTickets.createdAt);
+      res.json(tickets);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/tickets", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const data = insertSupportTicketSchema.parse({ ...req.body, userId });
+      const [ticket] = await db.insert(supportTickets).values(data).returning();
+      res.json(ticket);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   
   app.get("/api/progress", async (req, res) => {
     try {

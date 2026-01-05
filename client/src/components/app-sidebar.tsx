@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Github, Zap, Trophy } from "lucide-react";
+import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Github, Zap, Trophy, Settings, HelpCircle, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,8 +13,9 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/hooks/use-auth";
 import type { UserProgress } from "@shared/schema";
 import { levels } from "@shared/schema";
 
@@ -27,11 +28,14 @@ const navItems = [
 ];
 
 const settingsItems = [
+  { title: "Account Settings", url: "/settings", icon: Settings },
+  { title: "Support", url: "/support", icon: HelpCircle },
   { title: "Push to GitHub", url: "/github", icon: Github },
 ];
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
 
   const { data: progress } = useQuery<UserProgress>({
     queryKey: ['/api/progress'],
@@ -119,12 +123,13 @@ export function AppSidebar() {
 
         <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent">
           <Avatar className="h-9 w-9">
+            <AvatarImage src={user?.profileImageUrl || ""} />
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-              PM
+              {user?.firstName?.[0] || user?.email?.[0] || "U"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Product Pro</p>
+            <p className="text-sm font-medium truncate">{user?.firstName || user?.email || "User"}</p>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Flame className="h-3 w-3 text-orange-500" />
