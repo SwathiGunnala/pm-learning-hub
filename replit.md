@@ -72,22 +72,30 @@ Preferred communication style: Simple, everyday language.
 ### Data Storage Solutions
 
 **Current Implementation**:
-- In-memory storage using ES6 Maps
-- Structured around five main entities:
-  - Case Studies (product success/failure stories)
+- Hybrid storage approach:
+  - In-memory storage for demo content (case studies, exercises, frameworks)
+  - PostgreSQL for user-specific data
+
+- PostgreSQL Tables (via Drizzle ORM):
+  - `users` - User profiles from Replit Auth
+  - `sessions` - Session storage for authentication
+  - `subscriptions` - User subscription plans and status
+  - `user_progress2` - XP, streaks, notification preferences
+  - `user_activities` - Activity tracking for analytics
+  - `support_tickets` - User support requests
+
+- In-memory entities:
+  - Case Studies (57 real-world product stories)
   - Exercises (practice scenarios)
   - Frameworks (PM methodologies)
   - Journal Entries (user notes)
-  - User Progress (streak, completion stats)
+  - User Progress (local streak/completion stats)
 
-**Database Preparation**:
+**Database Configuration**:
 - Drizzle ORM configured for PostgreSQL
 - Schema definitions in `shared/schema.ts` using Zod
-- Migration configuration in `drizzle.config.ts`
-- Neon serverless PostgreSQL driver installed
-- Environment variable `DATABASE_URL` expected but optional
-
-**Design Decision**: The application uses in-memory storage for rapid prototyping with a clear migration path to PostgreSQL. The `IStorage` interface provides abstraction, allowing database implementation without changing business logic.
+- Neon serverless PostgreSQL driver
+- Environment variable `DATABASE_URL` required for user features
 
 ### External Dependencies
 
@@ -110,10 +118,33 @@ Preferred communication style: Simple, everyday language.
 - Hot module replacement (HMR) via Vite
 
 **Authentication Flow**:
+- User Authentication: Uses Replit Auth (OpenID Connect)
+  - Session-based authentication with PostgreSQL session store
+  - Protected routes requiring authentication
+  - Landing page for unauthenticated users
+  - Post-login redirect with state refresh
+
 - GitHub: Uses Replit Connector system for OAuth
   - Fetches access tokens from Replit Connectors API
   - Token refresh on expiration
   - Uncachable client pattern to ensure fresh tokens
+
+**Subscription System**:
+- Two-tier subscription plans:
+  - Free: 5 case studies, 3 exercises/month, basic frameworks
+  - Pro ($19/month): Unlimited access, AI feedback, progress tracking, email reminders
+- Database-backed subscription tracking
+- Upgrade pathway (Stripe integration ready)
+
+**Activity Tracking**:
+- Records user interactions (views, completions, submissions)
+- Stored in PostgreSQL for analytics
+- Integrated into key pages (Gym, Library)
+
+**Support System**:
+- Ticket submission with categories and priorities
+- Status tracking (open, in_progress, resolved, closed)
+- User-specific ticket history
 
 **Data Flow for AI Features**:
 1. User submits exercise response
