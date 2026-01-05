@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useTrackActivity } from "@/hooks/use-activity";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Exercise, AIFeedback } from "@shared/schema";
 
@@ -25,6 +26,7 @@ export default function Gym() {
   const [response, setResponse] = useState("");
   const [feedback, setFeedback] = useState<AIFeedback | null>(null);
   const { toast } = useToast();
+  const { trackActivity } = useTrackActivity();
 
   const { data: exercises, isLoading } = useQuery<Exercise[]>({
     queryKey: ["/api/exercises"],
@@ -43,6 +45,9 @@ export default function Gym() {
     onSuccess: (data: AIFeedback) => {
       setFeedback(data);
       queryClient.invalidateQueries({ queryKey: ["/api/progress"] });
+      if (activeExerciseId) {
+        trackActivity({ activityType: "submit", entityType: "exercise", entityId: activeExerciseId });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -57,6 +62,7 @@ export default function Gym() {
     setActiveExerciseId(id);
     setResponse("");
     setFeedback(null);
+    trackActivity({ activityType: "view", entityType: "exercise", entityId: id });
   };
 
   const handleSubmitResponse = () => {

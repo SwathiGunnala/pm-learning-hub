@@ -9,7 +9,7 @@ import { z } from "zod";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { db } from "./db";
 import { subscriptions, userActivities, supportTickets, userProgress2 } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -53,16 +53,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const userSettingsSchema = z.object({
+    emailNotifications: z.boolean().optional(),
+    streakReminders: z.boolean().optional(),
+  });
+
   app.patch("/api/user-settings", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { emailNotifications, streakReminders } = req.body;
+      const parsed = userSettingsSchema.parse(req.body);
       const [updated] = await db.update(userProgress2)
-        .set({ emailNotifications, streakReminders, updatedAt: new Date() })
+        .set({ ...parsed, updatedAt: new Date() })
         .where(eq(userProgress2.userId, userId))
         .returning();
       res.json(updated);
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid settings data" });
+      }
       res.status(500).json({ error: error.message });
     }
   });
@@ -85,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const activities = await db.select().from(userActivities)
         .where(eq(userActivities.userId, userId))
-        .orderBy(userActivities.createdAt);
+        .orderBy(desc(userActivities.createdAt));
       res.json(activities);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -97,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const tickets = await db.select().from(supportTickets)
         .where(eq(supportTickets.userId, userId))
-        .orderBy(supportTickets.createdAt);
+        .orderBy(desc(supportTickets.createdAt));
       res.json(tickets);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
