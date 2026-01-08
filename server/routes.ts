@@ -8,7 +8,7 @@ import { execSync } from "child_process";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { db } from "./db";
-import { subscriptions, userActivities, supportTickets, userProgress2 } from "@shared/schema";
+import { subscriptions, userActivities, supportTickets, userProgress2, userFeedback, notifications, insertUserFeedbackSchema } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -118,6 +118,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = insertSupportTicketSchema.parse({ ...req.body, userId });
       const [ticket] = await db.insert(supportTickets).values(data).returning();
       res.json(ticket);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const feedbackList = await db.select().from(userFeedback)
+        .where(eq(userFeedback.userId, userId))
+        .orderBy(desc(userFeedback.createdAt));
+      res.json(feedbackList);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const data = insertUserFeedbackSchema.parse({ ...req.body, userId });
+      const [feedback] = await db.insert(userFeedback).values(data).returning();
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const notificationList = await db.select().from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+      res.json(notificationList);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const [notification] = await db.select().from(notifications)
+        .where(eq(notifications.id, id));
+      if (!notification || notification.userId !== userId) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      const [updated] = await db.update(notifications)
+        .set({ readAt: new Date() })
+        .where(eq(notifications.id, id))
+        .returning();
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/notifications/mark-all-read", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await db.update(notifications)
+        .set({ readAt: new Date() })
+        .where(eq(notifications.userId, userId));
+      res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
