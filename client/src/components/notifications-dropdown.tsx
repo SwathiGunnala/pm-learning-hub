@@ -104,12 +104,13 @@ export function NotificationsDropdown() {
             notifications.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
+                asChild={!!notification.linkUrl}
                 className={`flex flex-col items-start gap-1 p-3 cursor-pointer ${!notification.readAt ? "bg-muted/50" : ""}`}
                 onClick={() => handleNotificationClick(notification)}
                 data-testid={`notification-${notification.id}`}
               >
                 {notification.linkUrl ? (
-                  <Link href={notification.linkUrl} className="w-full">
+                  <Link href={notification.linkUrl}>
                     <div className="flex items-start justify-between w-full gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{notification.title}</p>
@@ -124,7 +125,7 @@ export function NotificationsDropdown() {
                     </span>
                   </Link>
                 ) : (
-                  <>
+                  <div className="w-full">
                     <div className="flex items-start justify-between w-full gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{notification.title}</p>
@@ -137,7 +138,7 @@ export function NotificationsDropdown() {
                     <span className="text-xs text-muted-foreground mt-1">
                       {formatDate(notification.createdAt)}
                     </span>
-                  </>
+                  </div>
                 )}
               </DropdownMenuItem>
             ))

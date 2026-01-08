@@ -188,6 +188,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: error.message });
     }
   });
+
+  const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(",").filter(Boolean) || [];
+  const isAdmin = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    if (ADMIN_USER_IDS.length === 0) {
+      console.error("ADMIN_USER_IDS not configured");
+      return res.status(503).json({ error: "Admin access not configured" });
+    }
+    const userId = req.user?.claims?.sub;
+    if (!userId || !ADMIN_USER_IDS.includes(userId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    next();
+  };
+
+  const adminFeedbackUpdateSchema = z.object({
+    status: z.enum(["new", "reviewing", "actioned", "archived"]).optional(),
+    adminResponse: z.string().min(1).optional(),
+  });
+
+  app.get("/api/admin/feedback", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const feedbackList = await db.select().from(userFeedback)
+        .orderBy(desc(userFeedback.createdAt));
+      res.json(feedbackList);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/feedback/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const parsed = adminFeedbackUpdateSchema.parse(req.body);
+      
+      if (!parsed.status && !parsed.adminResponse) {
+        return res.status(400).json({ error: "No update data provided" });
+      }
+      
+      const updateData: any = { updatedAt: new Date() };
+      if (parsed.status) updateData.status = parsed.status;
+      if (parsed.adminResponse) {
+        updateData.adminResponse = parsed.adminResponse;
+        updateData.respondedAt = new Date();
+      }
+      
+      const [updated] = await db.update(userFeedback)
+        .set(updateData)
+        .where(eq(userFeedback.id, id))
+        .returning();
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Feedback not found" });
+      }
+
+      if (parsed.adminResponse) {
+        await db.insert(notifications).values({
+          userId: updated.userId,
+          type: "feedback_response",
+          title: "Response to your feedback",
+          message: `We've responded to your feedback: "${updated.title}"`,
+          linkUrl: "/feedback",
+        });
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid update data" });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  });
   
   app.get("/api/progress", async (req, res) => {
     try {
