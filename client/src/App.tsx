@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -9,7 +9,8 @@ import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, LogIn } from "lucide-react";
 import Dashboard from "@/pages/dashboard";
 import LessonPage from "@/pages/lesson";
 import Library from "@/pages/library";
@@ -23,29 +24,43 @@ import Feedback from "@/pages/feedback";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
-function AuthenticatedRouter() {
+const PUBLIC_ROUTES = ["/library", "/gym", "/toolkit"];
+
+function MainRouter() {
+  const { user } = useAuth();
+  
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={user ? Dashboard : Landing} />
       <Route path="/learn/:id" component={LessonPage} />
       <Route path="/library" component={Library} />
       <Route path="/gym" component={Gym} />
       <Route path="/toolkit" component={Toolkit} />
-      <Route path="/journal" component={Journal} />
-      <Route path="/github" component={GitHubPage} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/support" component={Support} />
-      <Route path="/feedback" component={Feedback} />
+      <Route path="/journal" component={user ? Journal : Landing} />
+      <Route path="/github" component={user ? GitHubPage : Landing} />
+      <Route path="/settings" component={user ? Settings : Landing} />
+      <Route path="/support" component={user ? Support : Landing} />
+      <Route path="/feedback" component={user ? Feedback : Landing} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-function AuthenticatedApp() {
+function MainApp() {
+  const { user } = useAuth();
+  const [location] = useLocation();
+  
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
+
+  const isPublicRoute = PUBLIC_ROUTES.some(route => location.startsWith(route));
+  const showAppShell = user || isPublicRoute;
+
+  if (!showAppShell) {
+    return <MainRouter />;
+  }
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
@@ -55,12 +70,21 @@ function AuthenticatedApp() {
           <header className="flex items-center justify-between h-14 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <div className="flex items-center gap-2">
-              <NotificationsDropdown />
+              {user ? (
+                <NotificationsDropdown />
+              ) : (
+                <Button asChild size="sm" data-testid="button-header-login">
+                  <a href="/api/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </a>
+                </Button>
+              )}
               <ThemeToggle />
             </div>
           </header>
           <main className="flex-1 overflow-auto">
-            <AuthenticatedRouter />
+            <MainRouter />
           </main>
         </div>
       </div>
@@ -69,7 +93,7 @@ function AuthenticatedApp() {
 }
 
 function AppContent() {
-  const { user, isLoading } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -79,11 +103,7 @@ function AppContent() {
     );
   }
 
-  if (!user) {
-    return <Landing />;
-  }
-
-  return <AuthenticatedApp />;
+  return <MainApp />;
 }
 
 function App() {

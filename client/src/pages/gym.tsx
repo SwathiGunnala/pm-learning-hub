@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Target, BarChart3, Compass, Lightbulb, Users, Loader2, ArrowLeft } from "lucide-react";
+import { Target, BarChart3, Compass, Lightbulb, Users, Loader2, ArrowLeft, LogIn } from "lucide-react";
 import { ExerciseCard } from "@/components/exercise-card";
 import { AIFeedbackPanel } from "@/components/ai-feedback-panel";
 import { Card } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useTrackActivity } from "@/hooks/use-activity";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Exercise, AIFeedback } from "@shared/schema";
 
@@ -27,6 +28,7 @@ export default function Gym() {
   const [feedback, setFeedback] = useState<AIFeedback | null>(null);
   const { toast } = useToast();
   const { trackActivity } = useTrackActivity();
+  const { user } = useAuth();
 
   const { data: exercises, isLoading } = useQuery<Exercise[]>({
     queryKey: ["/api/exercises"],
@@ -165,21 +167,35 @@ export default function Gym() {
               />
               
               {!feedback && (
-                <Button 
-                  className="w-full" 
-                  onClick={handleSubmitResponse}
-                  disabled={!response.trim() || analyzeMutation.isPending}
-                  data-testid="button-get-feedback"
-                >
-                  {analyzeMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing your thinking...
-                    </>
-                  ) : (
-                    "Get AI Feedback"
-                  )}
-                </Button>
+                user ? (
+                  <Button 
+                    className="w-full" 
+                    onClick={handleSubmitResponse}
+                    disabled={!response.trim() || analyzeMutation.isPending}
+                    data-testid="button-get-feedback"
+                  >
+                    {analyzeMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Analyzing your thinking...
+                      </>
+                    ) : (
+                      "Get AI Feedback"
+                    )}
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-center text-muted-foreground">
+                      Sign in to get personalized AI feedback on your response
+                    </p>
+                    <Button asChild className="w-full" data-testid="button-login-for-feedback">
+                      <a href="/api/login">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Sign In to Get Feedback
+                      </a>
+                    </Button>
+                  </div>
+                )
               )}
             </div>
           </div>
