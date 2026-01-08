@@ -154,6 +154,12 @@ Preferred communication style: Simple, everyday language.
 5. User progress incremented
 6. Optional: Save insights to journal
 
+**Feedback System**:
+- User feedback submission (bugs, features, UX, content)
+- Admin response workflow with notification creation
+- Status tracking (new, reviewing, actioned, archived)
+- Admin endpoints protected by ADMIN_USER_IDS environment variable
+
 **Content Delivery**:
 - Static assets served from `attached_assets/` directory
 - Generated images for hero sections and illustrations
