@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Zap, Trophy, Settings, HelpCircle, LogOut } from "lucide-react";
+import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Zap, Trophy, Settings, HelpCircle, MessageSquare, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +29,7 @@ const navItems = [
 
 const settingsItems = [
   { title: "Account Settings", url: "/settings", icon: Settings },
+  { title: "Feedback", url: "/feedback", icon: MessageSquare },
   { title: "Support", url: "/support", icon: HelpCircle },
 ];
 

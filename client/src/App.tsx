@@ -18,6 +18,7 @@ import Journal from "@/pages/journal";
 import GitHubPage from "@/pages/github";
 import Settings from "@/pages/settings";
 import Support from "@/pages/support";
+import Feedback from "@/pages/feedback";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -33,6 +34,7 @@ function AuthenticatedRouter() {
       <Route path="/github" component={GitHubPage} />
       <Route path="/settings" component={Settings} />
       <Route path="/support" component={Support} />
+      <Route path="/feedback" component={Feedback} />
       <Route component={NotFound} />
     </Switch>
   );
