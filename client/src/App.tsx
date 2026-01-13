@@ -9,6 +9,7 @@ import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { RetryIndicator } from "@/components/retry-indicator";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Loader2, LogIn } from "lucide-react";
@@ -114,6 +115,7 @@ function App() {
         <ThemeProvider>
           <TooltipProvider>
             <AppContent />
+            <RetryIndicator />
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>

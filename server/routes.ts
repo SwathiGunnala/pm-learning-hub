@@ -7,13 +7,36 @@ import { exerciseResponseSchema, journalEntrySchema, insertSupportTicketSchema }
 import { execSync } from "child_process";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
-import { db } from "./db";
+import { db, getConnectionStats } from "./db";
 import { subscriptions, userActivities, supportTickets, userProgress2, userFeedback, notifications, insertUserFeedbackSchema } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // Health check endpoint with database connection stats
+  app.get("/api/health", async (_req, res) => {
+    try {
+      const stats = getConnectionStats();
+      res.json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        database: {
+          ...stats,
+          status: stats.failedConnections > 0 && stats.lastErrorTime 
+            ? "degraded" 
+            : "connected"
+        }
+      });
+    } catch (error: any) {
+      res.status(503).json({
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
+        error: error.message
+      });
+    }
+  });
 
   app.get("/api/subscription", isAuthenticated, async (req: any, res) => {
     try {
