@@ -21,7 +21,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$19",
+    price: "$9.99",
     period: "/month",
     features: ["All 50+ case studies", "Unlimited exercises", "AI feedback", "All frameworks", "Progress tracking", "Email reminders"],
     cta: "Start Pro Trial",

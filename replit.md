@@ -132,7 +132,7 @@ Preferred communication style: Simple, everyday language.
 **Subscription System**:
 - Two-tier subscription plans:
   - Free: 5 case studies, 3 exercises/month, basic frameworks
-  - Pro ($19/month): Unlimited access, AI feedback, progress tracking, email reminders
+  - Pro ($9.99/month): Unlimited access, AI feedback, progress tracking, email reminders
 - Database-backed subscription tracking
 - Upgrade pathway (Stripe integration ready)
 

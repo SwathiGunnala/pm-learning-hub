@@ -803,7 +803,7 @@ Creates a new support ticket.
 | Progress Tracking | Basic |
 | Email Reminders | Not available |
 
-### 10.2 Pro Tier ($19/month)
+### 10.2 Pro Tier ($9.99/month)
 
 | Feature | Limit |
 |---------|-------|
