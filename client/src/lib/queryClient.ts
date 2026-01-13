@@ -48,7 +48,16 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      // Retry transient errors (network issues, 503s) up to 3 times
+      retry: (failureCount, error) => {
+        if (failureCount >= 3) return false;
+        // Retry on network errors or 503 (service unavailable)
+        const message = error instanceof Error ? error.message : '';
+        return message.includes('503') || 
+               message.includes('Failed to fetch') ||
+               message.includes('NetworkError');
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
     mutations: {
       retry: false,

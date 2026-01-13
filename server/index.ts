@@ -52,9 +52,16 @@ app.use((req, res, next) => {
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    
+    // Log database connection errors but don't crash
+    if (err.message?.includes('EAI_AGAIN') || err.message?.includes('ENOTFOUND')) {
+      console.error('Transient database error:', err.message);
+      res.status(503).json({ message: "Service temporarily unavailable. Please refresh the page." });
+      return;
+    }
 
+    console.error('Server error:', err.message);
     res.status(status).json({ message });
-    throw err;
   });
 
   // importantly only setup vite in development and after
