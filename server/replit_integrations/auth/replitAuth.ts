@@ -6,6 +6,7 @@ import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
+import MemoryStore from "memorystore";
 import { authStorage } from "./storage";
 
 const getOidcConfig = memoize(
@@ -20,13 +21,38 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
+  
+  // Try to use PostgreSQL session store, fall back to memory store if unavailable
+  let sessionStore: session.Store;
+  
+  if (process.env.DATABASE_URL) {
+    try {
+      const pgStore = connectPg(session);
+      sessionStore = new pgStore({
+        conString: process.env.DATABASE_URL,
+        createTableIfMissing: false,
+        ttl: sessionTtl,
+        tableName: "sessions",
+        errorLog: (error: Error) => {
+          console.error("[Session Store] PostgreSQL error:", error.message);
+        },
+      });
+      console.log("[Session] Using PostgreSQL session store");
+    } catch (error: any) {
+      console.warn("[Session] PostgreSQL store failed, using memory store:", error.message);
+      const MemStore = MemoryStore(session);
+      sessionStore = new MemStore({
+        checkPeriod: 86400000, // prune expired entries every 24h
+      });
+    }
+  } else {
+    console.warn("[Session] No DATABASE_URL, using memory session store");
+    const MemStore = MemoryStore(session);
+    sessionStore = new MemStore({
+      checkPeriod: 86400000,
+    });
+  }
+
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,

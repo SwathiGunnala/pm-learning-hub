@@ -4,9 +4,10 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
+// Warn but don't crash if DATABASE_URL is missing - allows app to start for public routes
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+  console.warn(
+    "[DB WARN] DATABASE_URL is not set. Database features will be unavailable.",
   );
 }
 
@@ -22,15 +23,18 @@ function dbLog(level: 'info' | 'warn' | 'error', message: string, details?: Reco
 }
 
 // Configure pool with retry-friendly settings for Neon PostgreSQL
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Connection pool settings
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-  // Allow retries on transient errors
-  allowExitOnIdle: false,
-});
+// Only create pool if DATABASE_URL is available
+export const pool = process.env.DATABASE_URL 
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      // Connection pool settings
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+      // Allow retries on transient errors
+      allowExitOnIdle: false,
+    })
+  : null;
 
 // Track connection stats
 let connectionStats = {
@@ -40,38 +44,40 @@ let connectionStats = {
   lastErrorTime: null as string | null,
 };
 
-// Handle pool connection events
-pool.on('connect', () => {
-  connectionStats.totalConnections++;
-  dbLog('info', 'New database connection established', { 
-    totalConnections: connectionStats.totalConnections,
-    poolSize: pool.totalCount,
-    idleCount: pool.idleCount,
-    waitingCount: pool.waitingCount
+// Handle pool connection events (only if pool exists)
+if (pool) {
+  pool.on('connect', () => {
+    connectionStats.totalConnections++;
+    dbLog('info', 'New database connection established', { 
+      totalConnections: connectionStats.totalConnections,
+      poolSize: pool.totalCount,
+      idleCount: pool.idleCount,
+      waitingCount: pool.waitingCount
+    });
   });
-});
 
-// Handle pool errors gracefully (prevents crashes on transient DNS errors)
-pool.on('error', (err) => {
-  connectionStats.failedConnections++;
-  connectionStats.lastError = err.message;
-  connectionStats.lastErrorTime = new Date().toISOString();
-  
-  const errorType = identifyErrorType(err.message);
-  
-  dbLog('error', `Database pool error: ${errorType}`, {
-    message: err.message,
-    code: (err as any).code,
-    failedConnections: connectionStats.failedConnections,
-    poolSize: pool.totalCount,
-    idleCount: pool.idleCount
+  // Handle pool errors gracefully (prevents crashes on transient DNS errors)
+  pool.on('error', (err) => {
+    connectionStats.failedConnections++;
+    connectionStats.lastError = err.message;
+    connectionStats.lastErrorTime = new Date().toISOString();
+    
+    const errorType = identifyErrorType(err.message);
+    
+    dbLog('error', `Database pool error: ${errorType}`, {
+      message: err.message,
+      code: (err as any).code,
+      failedConnections: connectionStats.failedConnections,
+      poolSize: pool.totalCount,
+      idleCount: pool.idleCount
+    });
+    
+    // Don't crash on transient errors
+    if (errorType === 'DNS_TRANSIENT' || errorType === 'NETWORK_TRANSIENT') {
+      dbLog('info', 'Transient error detected, connection will retry automatically');
+    }
   });
-  
-  // Don't crash on transient errors
-  if (errorType === 'DNS_TRANSIENT' || errorType === 'NETWORK_TRANSIENT') {
-    dbLog('info', 'Transient error detected, connection will retry automatically');
-  }
-});
+}
 
 // Identify error type for better logging
 function identifyErrorType(message: string): string {
@@ -90,7 +96,8 @@ function isTransientError(error: any): boolean {
   return ['DNS_TRANSIENT', 'DNS_NOT_FOUND', 'CONNECTION_RESET', 'TIMEOUT', 'CONNECTION_REFUSED'].includes(errorType);
 }
 
-export const db = drizzle(pool, { schema });
+// Create drizzle instance only if pool exists
+export const db = pool ? drizzle(pool, { schema }) : null as any;
 
 // Helper function to execute queries with retry logic
 export async function withRetry<T>(
@@ -143,8 +150,9 @@ export async function withRetry<T>(
 export function getConnectionStats() {
   return {
     ...connectionStats,
-    currentPoolSize: pool.totalCount,
-    idleConnections: pool.idleCount,
-    waitingRequests: pool.waitingCount
+    currentPoolSize: pool?.totalCount ?? 0,
+    idleConnections: pool?.idleCount ?? 0,
+    waitingRequests: pool?.waitingCount ?? 0,
+    databaseAvailable: !!pool
   };
 }
