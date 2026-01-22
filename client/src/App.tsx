@@ -10,6 +10,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { RetryIndicator } from "@/components/retry-indicator";
+import { BetaBanner } from "@/components/beta-banner";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Loader2, LogIn } from "lucide-react";
@@ -114,7 +115,12 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TooltipProvider>
-            <AppContent />
+            <div className="flex flex-col min-h-screen">
+              <BetaBanner />
+              <div className="flex-1">
+                <AppContent />
+              </div>
+            </div>
             <RetryIndicator />
             <Toaster />
           </TooltipProvider>
