@@ -59,15 +59,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!progress) {
         [progress] = await db.insert(userProgress2).values({ 
           userId, 
-          streakDays: 1,
-          longestStreak: 1,
+          streakDays: 0,
+          longestStreak: 0,
           totalXp: 0,
           level: 1,
           levelProgress: 0,
           lessonsCompleted: [],
           unitsCompleted: [],
           challengesCompleted: 0,
-          lastActivityDate: new Date().toISOString().split('T')[0],
+          lastActivityDate: null,
         }).returning();
       }
       res.json(progress);

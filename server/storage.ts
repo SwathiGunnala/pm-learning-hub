@@ -59,15 +59,15 @@ export class MemStorage implements IStorage {
     this.challenges = seedChallenges;
     
     this.userProgress = {
-      streakDays: 1,
-      longestStreak: 1,
+      streakDays: 0,
+      longestStreak: 0,
       totalXp: 0,
       level: 1,
       levelProgress: 0,
       lessonsCompleted: [],
       unitsCompleted: [],
       challengesCompleted: 0,
-      lastActivityDate: new Date().toISOString().split('T')[0],
+      lastActivityDate: "",
     };
     
     this.seedData();
