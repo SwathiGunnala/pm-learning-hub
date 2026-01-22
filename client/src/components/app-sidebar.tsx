@@ -146,10 +146,17 @@ export function AppSidebar() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{user?.firstName || user?.email || "User"}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Flame className="h-3 w-3 text-orange-500" />
-                    <span>{progress?.streakDays ? `${progress.streakDays} days` : "Start streak"}</span>
-                  </div>
+                  {progress?.streakDays ? (
+                    <div className="flex items-center gap-1">
+                      <Flame className="h-3 w-3 text-orange-500" />
+                      <span>{progress.streakDays} days</span>
+                    </div>
+                  ) : (
+                    <Link href="/gym" className="flex items-center gap-1 text-orange-500 hover:underline">
+                      <Flame className="h-3 w-3" />
+                      <span>Start streak</span>
+                    </Link>
+                  )}
                   <div className="flex items-center gap-1">
                     <Zap className="h-3 w-3 text-purple-500" />
                     <span>{progress?.totalXp || 0} XP</span>

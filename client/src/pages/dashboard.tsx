@@ -112,21 +112,33 @@ export default function Dashboard() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <CardTitle className="text-2xl">Welcome back!</CardTitle>
-                <CardDescription>Ready to sharpen your PM skills today?</CardDescription>
+                <CardTitle className="text-2xl">
+                  {progress?.streakDays ? "Welcome back!" : "Welcome!"}
+                </CardTitle>
+                <CardDescription>
+                  {progress?.streakDays 
+                    ? "Ready to sharpen your PM skills today?" 
+                    : "Complete your first exercise to start your streak"}
+                </CardDescription>
               </div>
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500/10" data-testid="stat-streak">
-                  <Flame className="h-5 w-5 text-orange-500" />
-                  <div>
-                    <p className="text-lg font-bold text-orange-500">
-                      {progress?.streakDays ? progress.streakDays : "Begin"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {progress?.streakDays ? "day streak" : "your streak"}
-                    </p>
+                {progress?.streakDays ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500/10" data-testid="stat-streak">
+                    <Flame className="h-5 w-5 text-orange-500" />
+                    <div>
+                      <p className="text-lg font-bold text-orange-500">{progress.streakDays}</p>
+                      <p className="text-xs text-muted-foreground">day streak</p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <Link href="/gym">
+                    <Button variant="outline" className="gap-2 border-orange-500/30 text-orange-600 hover-elevate" data-testid="button-start-streak">
+                      <Flame className="h-4 w-4" />
+                      Start Your Streak
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                )}
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-500/10" data-testid="stat-xp">
                   <Zap className="h-5 w-5 text-purple-500" />
                   <div>
