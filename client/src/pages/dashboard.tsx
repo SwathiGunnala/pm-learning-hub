@@ -221,9 +221,19 @@ export default function Dashboard() {
                     <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r ${gradient} text-white`}>
                       <Icon className="h-5 w-5" />
                     </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {progressInfo.completed}/{progressInfo.total} lessons
-                    </Badge>
+                    {progressInfo.completed === 0 ? (
+                      <Badge className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                        New
+                      </Badge>
+                    ) : progressInfo.percent === 100 ? (
+                      <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                        Completed
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">
+                        {progressInfo.completed}/{progressInfo.total} lessons
+                      </Badge>
+                    )}
                   </div>
                   <CardTitle className="text-lg mt-3">{pillar.title}</CardTitle>
                   <CardDescription className="text-sm">{pillar.description}</CardDescription>
@@ -273,22 +283,22 @@ export default function Dashboard() {
                     )}
                   </div>
 
-                  {nextStep ? (
-                    <Link href={`/learn/${nextStep.lesson.id}`}>
-                      <Button className="w-full gap-2" data-testid={`button-continue-${pillar.id}`}>
-                        Continue Learning
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  ) : progressInfo.percent === 100 ? (
+                  {progressInfo.percent === 100 ? (
                     <Button variant="outline" className="w-full gap-2" disabled>
                       <Check className="h-4 w-4" />
                       Completed
                     </Button>
+                  ) : nextStep && progressInfo.completed > 0 ? (
+                    <Link href={`/learn/${nextStep.lesson.id}`}>
+                      <Button className="w-full gap-2" data-testid={`button-continue-${pillar.id}`}>
+                        Continue
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
                   ) : (
                     <Link href={`/learn/${pillar.units[0]?.lessons[0]?.id}`}>
                       <Button className="w-full gap-2" data-testid={`button-start-${pillar.id}`}>
-                        Start Learning
+                        Start
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     </Link>
