@@ -148,7 +148,7 @@ export function AppSidebar() {
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Flame className="h-3 w-3 text-orange-500" />
-                    <span>{progress?.streakDays || 0} days</span>
+                    <span>{progress?.streakDays ? `${progress.streakDays} days` : "Start streak"}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Zap className="h-3 w-3 text-purple-500" />

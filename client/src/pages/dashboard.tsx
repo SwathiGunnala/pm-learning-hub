@@ -119,8 +119,12 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500/10" data-testid="stat-streak">
                   <Flame className="h-5 w-5 text-orange-500" />
                   <div>
-                    <p className="text-lg font-bold text-orange-500">{progress?.streakDays || 0}</p>
-                    <p className="text-xs text-muted-foreground">day streak</p>
+                    <p className="text-lg font-bold text-orange-500">
+                      {progress?.streakDays ? progress.streakDays : "Begin"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {progress?.streakDays ? "day streak" : "your streak"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-500/10" data-testid="stat-xp">

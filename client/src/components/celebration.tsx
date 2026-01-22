@@ -138,8 +138,8 @@ export function StreakFlame({ days }: { days: number }) {
         </svg>
       </motion.div>
       <div>
-        <p className="text-2xl font-bold text-orange-500">{days}</p>
-        <p className="text-xs text-muted-foreground">day streak</p>
+        <p className="text-2xl font-bold text-orange-500">{days || "Begin"}</p>
+        <p className="text-xs text-muted-foreground">{days ? "day streak" : "your streak"}</p>
       </div>
     </motion.div>
   );
