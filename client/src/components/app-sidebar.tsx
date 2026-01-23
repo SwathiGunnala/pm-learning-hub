@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Zap, Trophy, Settings, HelpCircle, MessageSquare, LogIn } from "lucide-react";
+import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Zap, Trophy, Settings, HelpCircle, MessageSquare, LogIn, BarChart3 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -35,6 +35,7 @@ const settingsItems = [
   { title: "Account Settings", url: "/settings", icon: Settings },
   { title: "Feedback", url: "/feedback", icon: MessageSquare },
   { title: "Support", url: "/support", icon: HelpCircle },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, adminOnly: true },
 ];
 
 export function AppSidebar() {

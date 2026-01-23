@@ -8,8 +8,8 @@ import { execSync } from "child_process";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { db, getConnectionStats } from "./db";
-import { subscriptions, userActivities, supportTickets, userProgress2, userFeedback, notifications, insertUserFeedbackSchema } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { subscriptions, userActivities, supportTickets, userProgress2, userFeedback, notifications, insertUserFeedbackSchema, users } from "@shared/schema";
+import { eq, desc, sql, count, gte, and } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -624,6 +624,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("GitHub push error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Analytics endpoints
+  app.get("/api/analytics/overview", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const now = new Date();
+      const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const [totalUsers] = await db.select({ count: count() }).from(users);
+      const [activeUsersDay] = await db.select({ count: sql<number>`COUNT(DISTINCT user_id)` })
+        .from(userActivities)
+        .where(gte(userActivities.createdAt, dayAgo));
+      const [activeUsersWeek] = await db.select({ count: sql<number>`COUNT(DISTINCT user_id)` })
+        .from(userActivities)
+        .where(gte(userActivities.createdAt, weekAgo));
+      const [totalSessions] = await db.select({ count: count() })
+        .from(userActivities)
+        .where(eq(userActivities.activityType, "session_start"));
+      const [pageViews] = await db.select({ count: count() })
+        .from(userActivities)
+        .where(eq(userActivities.activityType, "page_view"));
+
+      res.json({
+        totalUsers: totalUsers?.count || 0,
+        activeUsersToday: activeUsersDay?.count || 0,
+        activeUsersThisWeek: activeUsersWeek?.count || 0,
+        totalSessions: totalSessions?.count || 0,
+        totalPageViews: pageViews?.count || 0
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/analytics/page-views", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const pageViews = await db.select({
+        page: userActivities.entityId,
+        views: count()
+      })
+        .from(userActivities)
+        .where(eq(userActivities.activityType, "page_view"))
+        .groupBy(userActivities.entityId)
+        .orderBy(desc(count()));
+
+      res.json(pageViews);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/analytics/user-journeys", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      const journeys = await db.select({
+        userId: userActivities.userId,
+        activityType: userActivities.activityType,
+        entityType: userActivities.entityType,
+        entityId: userActivities.entityId,
+        metadata: userActivities.metadata,
+        createdAt: userActivities.createdAt
+      })
+        .from(userActivities)
+        .orderBy(desc(userActivities.createdAt))
+        .limit(limit);
+
+      const groupedByUser = journeys.reduce((acc: Record<string, typeof journeys>, activity: typeof journeys[number]) => {
+        if (!acc[activity.userId]) {
+          acc[activity.userId] = [];
+        }
+        acc[activity.userId].push(activity);
+        return acc;
+      }, {});
+
+      res.json({
+        recentActivities: journeys,
+        journeysByUser: groupedByUser
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/analytics/activity-breakdown", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const breakdown = await db.select({
+        activityType: userActivities.activityType,
+        count: count()
+      })
+        .from(userActivities)
+        .groupBy(userActivities.activityType)
+        .orderBy(desc(count()));
+
+      res.json(breakdown);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/analytics/content-engagement", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const entityEngagement = await db.select({
+        entityType: userActivities.entityType,
+        entityId: userActivities.entityId,
+        views: count()
+      })
+        .from(userActivities)
+        .where(and(
+          eq(userActivities.activityType, "view"),
+          sql`${userActivities.entityType} IS NOT NULL`
+        ))
+        .groupBy(userActivities.entityType, userActivities.entityId)
+        .orderBy(desc(count()))
+        .limit(20);
+
+      res.json(entityEngagement);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/analytics/funnel", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const [logins] = await db.select({ count: count() })
+        .from(userActivities)
+        .where(eq(userActivities.activityType, "login"));
+      
+      const [dashboardViews] = await db.select({ count: count() })
+        .from(userActivities)
+        .where(and(
+          eq(userActivities.activityType, "page_view"),
+          eq(userActivities.entityId, "/")
+        ));
+
+      const [gymViews] = await db.select({ count: count() })
+        .from(userActivities)
+        .where(and(
+          eq(userActivities.activityType, "page_view"),
+          eq(userActivities.entityId, "/gym")
+        ));
+
+      const [exerciseSubmissions] = await db.select({ count: count() })
+        .from(userActivities)
+        .where(eq(userActivities.activityType, "submit"));
+
+      const [completions] = await db.select({ count: count() })
+        .from(userActivities)
+        .where(eq(userActivities.activityType, "complete"));
+
+      res.json({
+        funnel: [
+          { step: "Login", count: logins?.count || 0 },
+          { step: "View Dashboard", count: dashboardViews?.count || 0 },
+          { step: "Visit Gym", count: gymViews?.count || 0 },
+          { step: "Submit Exercise", count: exerciseSubmissions?.count || 0 },
+          { step: "Complete Content", count: completions?.count || 0 }
+        ]
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/analytics/time-on-page", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const timeData = await db.select({
+        page: userActivities.entityId,
+        avgTime: sql<number>`AVG((${userActivities.metadata}->>'seconds')::numeric)`,
+        totalViews: count()
+      })
+        .from(userActivities)
+        .where(eq(userActivities.activityType, "time_on_page"))
+        .groupBy(userActivities.entityId)
+        .orderBy(desc(sql`AVG((${userActivities.metadata}->>'seconds')::numeric)`));
+
+      res.json(timeData);
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });

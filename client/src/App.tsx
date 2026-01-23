@@ -24,8 +24,10 @@ import GitHubPage from "@/pages/github";
 import Settings from "@/pages/settings";
 import Support from "@/pages/support";
 import Feedback from "@/pages/feedback";
+import Analytics from "@/pages/analytics";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
+import { usePageTracking, useSessionTracking } from "@/hooks/use-activity";
 
 const PUBLIC_ROUTES = ["/library", "/gym", "/toolkit"];
 
@@ -44,9 +46,16 @@ function MainRouter() {
       <Route path="/settings" component={user ? Settings : Landing} />
       <Route path="/support" component={user ? Support : Landing} />
       <Route path="/feedback" component={user ? Feedback : Landing} />
+      <Route path="/analytics" component={user ? Analytics : Landing} />
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+function TrackingWrapper({ children }: { children: React.ReactNode }) {
+  usePageTracking();
+  useSessionTracking();
+  return <>{children}</>;
 }
 
 function MainApp() {
@@ -106,7 +115,11 @@ function AppContent() {
     );
   }
 
-  return <MainApp />;
+  return (
+    <TrackingWrapper>
+      <MainApp />
+    </TrackingWrapper>
+  );
 }
 
 function App() {
