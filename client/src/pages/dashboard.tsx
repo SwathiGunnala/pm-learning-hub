@@ -22,6 +22,7 @@ import {
 import type { Pillar, UserProgress, DailyChallenge } from "@shared/schema";
 import { levels } from "@shared/schema";
 import { DailyChallengeCard } from "@/components/daily-challenge-card";
+import { useTrackActivity } from "@/hooks/use-activity";
 
 const pillarIcons: Record<string, any> = {
   foundations: BookOpen,
@@ -48,6 +49,8 @@ const pillarBorders: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  const { trackActivity } = useTrackActivity();
+  
   const { data: curriculum, isLoading: curriculumLoading } = useQuery<Pillar[]>({
     queryKey: ['/api/curriculum'],
   });
@@ -59,6 +62,15 @@ export default function Dashboard() {
   const { data: dailyChallenge, isLoading: challengeLoading } = useQuery<DailyChallenge>({
     queryKey: ['/api/daily-challenge'],
   });
+
+  const handlePillarClick = (pillar: Pillar) => {
+    trackActivity({
+      activityType: "feature_click",
+      entityType: "pillar",
+      entityId: pillar.id,
+      metadata: { title: pillar.title }
+    });
+  };
 
   const currentLevel = levels.find(l => l.level === (progress?.level || 1));
   const nextLevel = levels.find(l => l.level === (progress?.level || 1) + 1);

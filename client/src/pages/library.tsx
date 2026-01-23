@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Filter, TrendingUp, TrendingDown, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTrackActivity } from "@/hooks/use-activity";
 import type { CaseStudy } from "@shared/schema";
 
 const outcomeFilters = [
@@ -34,10 +35,22 @@ export default function Library() {
   const [difficultyFilter, setDifficultyFilter] = useState("All Levels");
   const [industryFilter, setIndustryFilter] = useState("All Industries");
   const [selectedCase, setSelectedCase] = useState<CaseStudy | null>(null);
+  const { trackActivity } = useTrackActivity();
 
   const { data: caseStudies, isLoading } = useQuery<CaseStudy[]>({
     queryKey: ["/api/case-studies"],
   });
+
+  useEffect(() => {
+    if (selectedCase) {
+      trackActivity({
+        activityType: "view",
+        entityType: "case_study",
+        entityId: selectedCase.id,
+        metadata: { title: selectedCase.title, company: selectedCase.company }
+      });
+    }
+  }, [selectedCase, trackActivity]);
 
   const industries = useMemo(() => {
     if (!caseStudies) return ["All Industries"];
