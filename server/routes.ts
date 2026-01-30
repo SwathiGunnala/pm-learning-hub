@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getAuthenticatedUser, listUserRepos, createRepository } from "./github";
-import { analyzeExerciseResponse, analyzeChallengeResponse } from "./openai";
+import { analyzeExerciseResponse, analyzeChallengeResponse, chatWithAssistant } from "./openai";
 import { exerciseResponseSchema, journalEntrySchema, insertSupportTicketSchema } from "@shared/schema";
 import { execSync } from "child_process";
 import { z } from "zod";
@@ -79,6 +79,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const userSettingsSchema = z.object({
     emailNotifications: z.boolean().optional(),
     streakReminders: z.boolean().optional(),
+  });
+
+  const onboardingSchema = z.object({
+    experienceLevel: z.enum(["beginner", "intermediate", "expert"]),
+  });
+
+  app.post("/api/onboarding/complete", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { experienceLevel } = onboardingSchema.parse(req.body);
+      
+      let [existing] = await db.select().from(userProgress2).where(eq(userProgress2.userId, userId));
+      
+      if (!existing) {
+        [existing] = await db.insert(userProgress2).values({
+          userId,
+          streakDays: 0,
+          longestStreak: 0,
+          totalXp: 0,
+          level: 1,
+          levelProgress: 0,
+          lessonsCompleted: [],
+          unitsCompleted: [],
+          challengesCompleted: 0,
+          experienceLevel,
+          onboardingCompleted: true,
+        }).returning();
+      } else {
+        [existing] = await db.update(userProgress2)
+          .set({ 
+            experienceLevel, 
+            onboardingCompleted: true,
+            updatedAt: new Date() 
+          })
+          .where(eq(userProgress2.userId, userId))
+          .returning();
+      }
+      
+      res.json(existing);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid onboarding data" });
+      }
+      res.status(500).json({ error: error.message });
+    }
   });
 
   app.patch("/api/user-settings", isAuthenticated, async (req: any, res) => {
@@ -443,6 +488,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(feedback);
     } catch (error: any) {
       console.error("Analysis error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
+    try {
+      const { message, context } = req.body;
+      
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const response = await chatWithAssistant(message, context || []);
+      res.json({ response });
+    } catch (error: any) {
+      console.error("AI chat error:", error);
       res.status(500).json({ error: error.message });
     }
   });

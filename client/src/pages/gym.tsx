@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Target, BarChart3, Compass, Lightbulb, Users, Loader2, ArrowLeft, LogIn } from "lucide-react";
+import { Target, BarChart3, Compass, Lightbulb, Users, Loader2, ArrowLeft, LogIn, Sparkles } from "lucide-react";
 import { ExerciseCard } from "@/components/exercise-card";
 import { AIFeedbackPanel } from "@/components/ai-feedback-panel";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTrackActivity } from "@/hooks/use-activity";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Exercise, AIFeedback } from "@shared/schema";
+import type { Exercise, AIFeedback, UserProgress2 } from "@shared/schema";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   "Prioritization": <Target className="h-6 w-6" />,
@@ -20,6 +20,12 @@ const categoryIcons: Record<string, React.ReactNode> = {
   "Product Strategy": <Compass className="h-6 w-6" />,
   "Feature Design": <Lightbulb className="h-6 w-6" />,
   "User Research": <Users className="h-6 w-6" />,
+};
+
+const difficultyLevels: Record<string, "beginner" | "intermediate" | "expert"> = {
+  "Beginner": "beginner",
+  "Intermediate": "intermediate",
+  "Advanced": "expert",
 };
 
 export default function Gym() {
@@ -33,6 +39,30 @@ export default function Gym() {
   const { data: exercises, isLoading } = useQuery<Exercise[]>({
     queryKey: ["/api/exercises"],
   });
+
+  const { data: userProgressDb } = useQuery<UserProgress2>({
+    queryKey: ["/api/user-progress-db"],
+    enabled: !!user,
+  });
+
+  const filteredExercises = useMemo(() => {
+    if (!exercises) return [];
+    if (!user || !userProgressDb?.experienceLevel) return exercises;
+    
+    const userLevel = userProgressDb.experienceLevel;
+    const levelPriority: Record<string, number> = {
+      beginner: 0,
+      intermediate: 1,
+      expert: 2
+    };
+    const userPriority = levelPriority[userLevel];
+    
+    return exercises.filter(exercise => {
+      const exerciseLevel = difficultyLevels[exercise.difficulty] || "beginner";
+      const exercisePriority = levelPriority[exerciseLevel];
+      return exercisePriority <= userPriority + 1;
+    });
+  }, [exercises, user, userProgressDb]);
 
   const { data: activeExercise } = useQuery<Exercise>({
     queryKey: ["/api/exercises", activeExerciseId],
@@ -104,7 +134,7 @@ export default function Gym() {
     }
   };
 
-  const exercisesByCategory = exercises?.reduce((acc, exercise) => {
+  const exercisesByCategory = filteredExercises?.reduce((acc, exercise) => {
     if (!acc[exercise.category]) {
       acc[exercise.category] = [];
     }
@@ -215,7 +245,16 @@ export default function Gym() {
   return (
     <div className="space-y-6 p-6 lg:p-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Product Sense Gym</h1>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h1 className="text-3xl font-bold">Product Sense Gym</h1>
+          {user && userProgressDb?.experienceLevel && (
+            <Badge variant="outline" className="gap-1">
+              <Sparkles className="h-3 w-3" />
+              {userProgressDb.experienceLevel === "beginner" ? "Beginner" : 
+                userProgressDb.experienceLevel === "intermediate" ? "Intermediate" : "Expert"} exercises
+            </Badge>
+          )}
+        </div>
         <p className="text-muted-foreground">
           Practice exercises to sharpen your product thinking
         </p>

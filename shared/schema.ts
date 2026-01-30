@@ -98,6 +98,8 @@ export const userProgress2 = pgTable("user_progress", {
   lastActivityDate: varchar("last_activity_date"),
   emailNotifications: boolean("email_notifications").notNull().default(true),
   streakReminders: boolean("streak_reminders").notNull().default(true),
+  experienceLevel: varchar("experience_level").$type<"beginner" | "intermediate" | "expert">(),
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

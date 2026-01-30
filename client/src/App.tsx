@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -11,6 +12,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { RetryIndicator } from "@/components/retry-indicator";
 import { BetaBanner } from "@/components/beta-banner";
+import { OnboardingQuiz } from "@/components/onboarding-quiz";
+import { AIAssistant } from "@/components/ai-assistant";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Loader2, LogIn } from "lucide-react";
@@ -28,6 +31,7 @@ import Analytics from "@/pages/analytics";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 import { usePageTracking, useSessionTracking } from "@/hooks/use-activity";
+import type { UserProgress2 } from "@shared/schema";
 
 const PUBLIC_ROUTES = ["/library", "/gym", "/toolkit"];
 
@@ -61,6 +65,14 @@ function TrackingWrapper({ children }: { children: React.ReactNode }) {
 function MainApp() {
   const { user } = useAuth();
   const [location] = useLocation();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  const { data: userProgress } = useQuery<UserProgress2>({
+    queryKey: ["/api/user-progress-db"],
+    enabled: !!user,
+  });
+
+  const needsOnboarding = user && userProgress && !userProgress.onboardingCompleted;
   
   const style = {
     "--sidebar-width": "16rem",
@@ -75,32 +87,38 @@ function MainApp() {
   }
 
   return (
-    <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full">
-        <AppSidebar />
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between h-14 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <div className="flex items-center gap-2">
-              {user ? (
-                <NotificationsDropdown />
-              ) : (
-                <Button asChild size="sm" data-testid="button-header-login">
-                  <a href="/api/login">
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Sign In
-                  </a>
-                </Button>
-              )}
-              <ThemeToggle />
-            </div>
-          </header>
-          <main className="flex-1 overflow-auto">
-            <MainRouter />
-          </main>
+    <>
+      {(needsOnboarding || showOnboarding) && (
+        <OnboardingQuiz onComplete={() => setShowOnboarding(false)} />
+      )}
+      <SidebarProvider style={style as React.CSSProperties}>
+        <div className="flex h-screen w-full">
+          <AppSidebar />
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <header className="flex items-center justify-between h-14 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <div className="flex items-center gap-2">
+                {user ? (
+                  <NotificationsDropdown />
+                ) : (
+                  <Button asChild size="sm" data-testid="button-header-login">
+                    <a href="/api/login">
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Sign In
+                    </a>
+                  </Button>
+                )}
+                <ThemeToggle />
+              </div>
+            </header>
+            <main className="flex-1 overflow-auto">
+              <MainRouter />
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+      {user && <AIAssistant />}
+    </>
   );
 }
 

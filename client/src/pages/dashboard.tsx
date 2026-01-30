@@ -17,9 +17,10 @@ import {
   Check,
   ChevronRight,
   Trophy,
-  Star
+  Star,
+  Sparkles
 } from "lucide-react";
-import type { Pillar, UserProgress, DailyChallenge } from "@shared/schema";
+import type { Pillar, UserProgress, DailyChallenge, UserProgress2 } from "@shared/schema";
 import { levels } from "@shared/schema";
 import { DailyChallengeCard } from "@/components/daily-challenge-card";
 import { useTrackActivity } from "@/hooks/use-activity";
@@ -48,6 +49,14 @@ const pillarBorders: Record<string, string> = {
   amber: "border-amber-500/30 hover:border-amber-500/50",
 };
 
+const pillarLevels: Record<string, "beginner" | "intermediate" | "expert"> = {
+  "foundations": "beginner",
+  "product-sense": "beginner",
+  "mental-models": "intermediate",
+  "stakeholder-mastery": "intermediate", 
+  "advanced-leadership": "expert",
+};
+
 export default function Dashboard() {
   const { trackActivity } = useTrackActivity();
   
@@ -63,6 +72,10 @@ export default function Dashboard() {
     queryKey: ['/api/daily-challenge'],
   });
 
+  const { data: userProgressDb } = useQuery<UserProgress2>({
+    queryKey: ['/api/user-progress-db'],
+  });
+
   const handlePillarClick = (pillar: Pillar) => {
     trackActivity({
       activityType: "feature_click",
@@ -74,6 +87,26 @@ export default function Dashboard() {
 
   const currentLevel = levels.find(l => l.level === (progress?.level || 1));
   const nextLevel = levels.find(l => l.level === (progress?.level || 1) + 1);
+
+  const getRecommendedPillars = () => {
+    if (!curriculum) return [];
+    const userLevel = userProgressDb?.experienceLevel || "beginner";
+    
+    const levelPriority: Record<string, number> = {
+      beginner: 0,
+      intermediate: 1,
+      expert: 2
+    };
+    
+    return curriculum.filter(pillar => {
+      const pillarLevel = pillarLevels[pillar.id] || "beginner";
+      const userPriority = levelPriority[userLevel];
+      const pillarPriority = levelPriority[pillarLevel];
+      return pillarPriority <= userPriority + 1;
+    });
+  };
+
+  const filteredCurriculum = getRecommendedPillars();
 
   const calculatePillarProgress = (pillar: Pillar) => {
     if (!progress) return { completed: 0, total: 0, percent: 0 };
@@ -208,13 +241,22 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <BookOpen className="h-5 w-5" />
-          Your Learning Path
-        </h2>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            Your Learning Path
+          </h2>
+          {userProgressDb?.experienceLevel && (
+            <Badge variant="outline" className="gap-1">
+              <Sparkles className="h-3 w-3" />
+              Personalized for {userProgressDb.experienceLevel === "beginner" ? "Beginners" : 
+                userProgressDb.experienceLevel === "intermediate" ? "Intermediate PMs" : "Expert PMs"}
+            </Badge>
+          )}
+        </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {curriculum?.map((pillar) => {
+          {filteredCurriculum?.map((pillar) => {
             const Icon = pillarIcons[pillar.id] || BookOpen;
             const progressInfo = calculatePillarProgress(pillar);
             const nextStep = getNextLesson(pillar);

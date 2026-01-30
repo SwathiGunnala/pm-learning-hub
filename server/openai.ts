@@ -150,3 +150,51 @@ Please analyze this response and provide feedback in the JSON format specified.`
     };
   }
 }
+
+export async function chatWithAssistant(
+  message: string,
+  context: Array<{ role: "user" | "assistant"; content: string }>
+): Promise<string> {
+  const systemPrompt = `You are a friendly, knowledgeable product management mentor and assistant. Your role is to help users learn about product management concepts, frameworks, strategies, and best practices.
+
+Your style:
+- Warm, encouraging, and supportive
+- Clear and concise explanations
+- Use real-world examples when helpful
+- Provide actionable insights
+- Keep responses focused and not too long (2-3 paragraphs max unless the topic requires more detail)
+
+Topics you can help with:
+- PM frameworks (RICE, MoSCoW, Jobs-to-be-Done, etc.)
+- Product strategy and vision
+- Prioritization techniques
+- Metrics and analytics
+- User research methods
+- Stakeholder management
+- Roadmapping
+- Agile/Scrum practices
+- Career advice for PMs
+- General PM concepts and terminology
+
+If asked about something outside product management, gently redirect the conversation back to PM topics while being helpful.`;
+
+  try {
+    const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+      { role: "system", content: systemPrompt },
+      ...context.map(msg => ({ role: msg.role as "user" | "assistant", content: msg.content })),
+      { role: "user", content: message }
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages,
+      max_tokens: 500,
+      temperature: 0.7,
+    });
+
+    return response.choices[0]?.message?.content || "I'm having trouble thinking right now. Could you try rephrasing your question?";
+  } catch (error) {
+    console.error("AI Assistant error:", error);
+    throw new Error("Failed to get AI response");
+  }
+}
