@@ -14,7 +14,36 @@ interface OnboardingQuizProps {
   onComplete: () => void;
 }
 
+// ============================================================================
+// ONBOARDING QUIZ - EXPERIENCE LEVEL DETERMINATION
+// ============================================================================
+// 
+// PURPOSE: These 3 questions determine the user's experience level for 
+// personalized content recommendations throughout the platform.
+//
+// HOW IT WORKS:
+// - Each question has 3 options mapped to: "beginner", "intermediate", "expert"
+// - User answers all 3 questions
+// - System counts how many times each level was selected
+// - Final level is determined by majority vote (see calculateLevel function)
+//
+// LEVEL DETERMINATION LOGIC:
+// - If user selected "expert" 2+ times → User is EXPERT
+// - Else if user selected "intermediate" 2+ times → User is INTERMEDIATE  
+// - Otherwise → User is BEGINNER (default/fallback)
+//
+// This means:
+// - To be classified as "expert": need at least 2 expert answers
+// - To be classified as "intermediate": need at least 2 intermediate answers
+// - Mixed answers (1 of each) or mostly beginner → defaults to beginner
+//
+// ============================================================================
+
 const questions = [
+  // QUESTION 1: Assesses current PM experience/tenure
+  // - Beginner: New to PM, learning basics
+  // - Intermediate: 1-3 years experience
+  // - Expert: 3+ years leading products
   {
     id: 1,
     question: "How would you describe your current PM experience?",
@@ -24,6 +53,10 @@ const questions = [
       { value: "expert", label: "I'm an experienced PM", description: "3+ years leading products" },
     ]
   },
+  // QUESTION 2: Assesses learning goals/aspirations
+  // - Beginner: Wants to learn fundamentals
+  // - Intermediate: Wants to sharpen specific skills
+  // - Expert: Wants to master advanced strategies
   {
     id: 2,
     question: "What's your primary learning goal?",
@@ -33,6 +66,10 @@ const questions = [
       { value: "expert", label: "Master advanced strategies", description: "Strategic thinking, leadership, complex decisions" },
     ]
   },
+  // QUESTION 3: Assesses data/metrics proficiency
+  // - Beginner: Still learning what to measure
+  // - Intermediate: Understands KPIs, can analyze data
+  // - Expert: Can set up metrics frameworks and run experiments
   {
     id: 3,
     question: "How comfortable are you with product metrics and data?",
@@ -59,13 +96,33 @@ export function OnboardingQuiz({ onComplete }: OnboardingQuizProps) {
     }
   });
 
+  // ============================================================================
+  // LEVEL CALCULATION FUNCTION
+  // ============================================================================
+  // Determines final experience level based on answers to the 3 questions.
+  // Uses a "majority vote" approach:
+  // 
+  // Step 1: Count how many times each level was selected
+  // Step 2: Apply priority rules (expert > intermediate > beginner)
+  //
+  // Examples:
+  // - [expert, expert, beginner] → 2 expert = EXPERT
+  // - [intermediate, expert, intermediate] → 2 intermediate = INTERMEDIATE
+  // - [beginner, beginner, expert] → 2 beginner = BEGINNER
+  // - [beginner, intermediate, expert] → 1 each = BEGINNER (default)
+  // ============================================================================
   const calculateLevel = (): ExperienceLevel => {
+    // Count how many times each level was selected across all 3 questions
     const counts = { beginner: 0, intermediate: 0, expert: 0 };
     answers.forEach(answer => {
       counts[answer as ExperienceLevel]++;
     });
+    
+    // Priority: Expert first (if 2+ expert answers)
     if (counts.expert >= 2) return "expert";
+    // Then intermediate (if 2+ intermediate answers)
     if (counts.intermediate >= 2) return "intermediate";
+    // Default to beginner (includes mixed answers or 2+ beginner)
     return "beginner";
   };
 
