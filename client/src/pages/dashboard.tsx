@@ -1,10 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   BookOpen, 
   Dumbbell, 
@@ -18,12 +20,17 @@ import {
   ChevronRight,
   Trophy,
   Star,
-  Sparkles
+  Sparkles,
+  Send,
+  CheckCircle,
+  Lightbulb,
+  TrendingUp
 } from "lucide-react";
-import type { Pillar, UserProgress, DailyChallenge, UserProgress2 } from "@shared/schema";
+import type { Pillar, UserProgress, DailyChallenge, UserProgress2, AIFeedback } from "@shared/schema";
 import { levels } from "@shared/schema";
-import { DailyChallengeCard } from "@/components/daily-challenge-card";
 import { useTrackActivity } from "@/hooks/use-activity";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const pillarIcons: Record<string, any> = {
   foundations: BookOpen,
@@ -59,6 +66,10 @@ const pillarLevels: Record<string, "beginner" | "intermediate" | "expert"> = {
 
 export default function Dashboard() {
   const { trackActivity } = useTrackActivity();
+  const { toast } = useToast();
+  const [showChallenge, setShowChallenge] = useState(false);
+  const [challengeResponse, setChallengeResponse] = useState("");
+  const [challengeFeedback, setChallengeFeedback] = useState<AIFeedback | null>(null);
   
   const { data: curriculum, isLoading: curriculumLoading } = useQuery<Pillar[]>({
     queryKey: ['/api/curriculum'],
@@ -75,6 +86,47 @@ export default function Dashboard() {
   const { data: userProgressDb } = useQuery<UserProgress2>({
     queryKey: ['/api/user-progress-db'],
   });
+
+  const submitChallengeMutation = useMutation({
+    mutationFn: async (response: string) => {
+      const res = await apiRequest("POST", "/api/daily-challenge/submit", { response });
+      return res.json();
+    },
+    onSuccess: (data: { feedback: AIFeedback; progress: UserProgress }) => {
+      setChallengeFeedback(data.feedback);
+      queryClient.invalidateQueries({ queryKey: ['/api/progress'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user-progress-db'] });
+      toast({
+        title: "Challenge Completed!",
+        description: `You earned ${dailyChallenge?.xpReward || 15} XP`,
+      });
+      trackActivity({
+        activityType: "complete",
+        entityType: "exercise",
+        entityId: dailyChallenge?.id || "unknown",
+        metadata: { type: "daily_challenge", xpEarned: dailyChallenge?.xpReward }
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to submit your response. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleStartChallenge = () => {
+    setShowChallenge(true);
+    setChallengeResponse("");
+    setChallengeFeedback(null);
+    trackActivity({
+      activityType: "view",
+      entityType: "exercise",
+      entityId: dailyChallenge?.id || "unknown",
+      metadata: { type: "daily_challenge" }
+    });
+  };
 
   const handlePillarClick = (pillar: Pillar) => {
     trackActivity({
@@ -139,9 +191,9 @@ export default function Dashboard() {
 
   if (curriculumLoading || progressLoading) {
     return (
-      <div className="container py-6 space-y-6">
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
         <Skeleton className="h-32 w-full" />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5].map(i => (
             <Skeleton key={i} className="h-48" />
           ))}
@@ -151,7 +203,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container py-6 space-y-8">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="md:col-span-2" data-testid="card-welcome">
           <CardHeader className="pb-3">
@@ -166,12 +218,12 @@ export default function Dashboard() {
                     : "Complete your first exercise to start your streak"}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-4">
-                {progress?.streakDays ? (
+              <div className="flex items-center gap-3 flex-wrap">
+                {(userProgressDb?.streakDays || progress?.streakDays) ? (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500/10" data-testid="stat-streak">
                     <Flame className="h-5 w-5 text-orange-500" />
-                    <div>
-                      <p className="text-lg font-bold text-orange-500">{progress.streakDays}</p>
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-orange-500">{userProgressDb?.streakDays || progress?.streakDays}</p>
                       <p className="text-xs text-muted-foreground">day streak</p>
                     </div>
                   </div>
@@ -186,8 +238,8 @@ export default function Dashboard() {
                 )}
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-500/10" data-testid="stat-xp">
                   <Zap className="h-5 w-5 text-purple-500" />
-                  <div>
-                    <p className="text-lg font-bold text-purple-500">{progress?.totalXp || 0}</p>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-purple-500">{userProgressDb?.totalXp || progress?.totalXp || 0}</p>
                     <p className="text-xs text-muted-foreground">total XP</p>
                   </div>
                 </div>
@@ -213,9 +265,17 @@ export default function Dashboard() {
         <Card className="relative overflow-hidden" data-testid="card-daily-challenge-preview">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10" />
           <CardHeader className="pb-3 relative">
-            <div className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Daily Challenge</CardTitle>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Daily Challenge</CardTitle>
+              </div>
+              {dailyChallenge && (
+                <Badge variant="outline" className="gap-1">
+                  <Zap className="h-3 w-3" />
+                  +{dailyChallenge.xpReward} XP
+                </Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent className="relative">
@@ -224,14 +284,13 @@ export default function Dashboard() {
             ) : dailyChallenge ? (
               <div className="space-y-3">
                 <p className="text-sm font-medium">{dailyChallenge.title}</p>
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <Badge variant="secondary">{dailyChallenge.category}</Badge>
-                  <Badge variant="outline" className="gap-1">
-                    <Zap className="h-3 w-3" />
-                    +{dailyChallenge.xpReward} XP
-                  </Badge>
-                </div>
-                <Button size="sm" className="w-full" data-testid="button-start-challenge">
+                <Badge variant="secondary">{dailyChallenge.category}</Badge>
+                <Button 
+                  size="sm" 
+                  className="w-full" 
+                  onClick={handleStartChallenge}
+                  data-testid="button-start-challenge"
+                >
                   Start Challenge
                 </Button>
               </div>
@@ -364,7 +423,139 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <DailyChallengeCard />
+      {showChallenge && dailyChallenge && (
+        <Card className="relative overflow-hidden" data-testid="card-daily-challenge-expanded">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
+          <CardHeader>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-purple-500 text-white">
+                  <Star className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Today's Challenge</CardTitle>
+                  <CardDescription>{dailyChallenge.title}</CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{dailyChallenge.category}</Badge>
+                <Badge variant="outline" className="gap-1">
+                  <Zap className="h-3 w-3" />
+                  +{dailyChallenge.xpReward} XP
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            {!challengeFeedback ? (
+              <>
+                <div className="space-y-4">
+                  <div className="p-4 rounded-lg bg-muted/50 space-y-3">
+                    <h4 className="font-medium">Scenario</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {dailyChallenge.scenario}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">{dailyChallenge.question}</h4>
+                    <Textarea
+                      placeholder="Think through your approach... What would you do and why?"
+                      value={challengeResponse}
+                      onChange={(e) => setChallengeResponse(e.target.value)}
+                      rows={5}
+                      className="resize-none"
+                      data-testid="input-challenge-response"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => submitChallengeMutation.mutate(challengeResponse)}
+                  disabled={challengeResponse.trim().length < 20 || submitChallengeMutation.isPending}
+                  className="w-full gap-2"
+                  data-testid="button-submit-challenge"
+                >
+                  {submitChallengeMutation.isPending ? (
+                    "Getting feedback..."
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Submit Response
+                    </>
+                  )}
+                </Button>
+
+                {challengeResponse.trim().length < 20 && challengeResponse.length > 0 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Share a bit more of your thinking (at least 20 characters)
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-center gap-2 text-green-500">
+                  <CheckCircle className="h-6 w-6" />
+                  <span className="text-lg font-medium">Challenge Complete!</span>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg bg-green-500/10 space-y-2">
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                      <CheckCircle className="h-4 w-4" />
+                      <h4 className="font-medium">What You Did Well</h4>
+                    </div>
+                    <ul className="space-y-1">
+                      {challengeFeedback.strengths.map((s, i) => (
+                        <li key={i} className="text-sm text-muted-foreground">{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-blue-500/10 space-y-2">
+                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                      <Lightbulb className="h-4 w-4" />
+                      <h4 className="font-medium">Areas to Explore</h4>
+                    </div>
+                    <ul className="space-y-1">
+                      {challengeFeedback.improvements.map((s, i) => (
+                        <li key={i} className="text-sm text-muted-foreground">{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {challengeFeedback.tip && (
+                  <div className="p-4 rounded-lg bg-amber-500/10 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                      <TrendingUp className="h-4 w-4" />
+                      <h4 className="font-medium">Pro Tip</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{challengeFeedback.tip}</p>
+                  </div>
+                )}
+
+                <div className="text-center text-sm text-muted-foreground">
+                  <span className="flex items-center justify-center gap-2">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    Your streak has been updated!
+                  </span>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setShowChallenge(false)}
+                  className="w-full"
+                  data-testid="button-close-challenge"
+                >
+                  Close
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

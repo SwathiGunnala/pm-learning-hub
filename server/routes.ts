@@ -384,8 +384,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/daily-challenge/submit", async (req, res) => {
+  app.post("/api/daily-challenge/submit", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const challenge = await storage.getTodaysChallenge();
       const { response } = req.body;
       
@@ -401,12 +402,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const progress = await storage.completeChallenge(challenge.xpReward);
 
+      const today = new Date().toISOString().split('T')[0];
+      let [userProgressRecord] = await db.select().from(userProgress2).where(eq(userProgress2.userId, userId));
+      
+      if (!userProgressRecord) {
+        const { level, progress: levelProgress } = calculateUserLevel(challenge.xpReward);
+        [userProgressRecord] = await db.insert(userProgress2).values({
+          userId,
+          streakDays: 1,
+          longestStreak: 1,
+          totalXp: challenge.xpReward,
+          level,
+          levelProgress,
+          lessonsCompleted: [],
+          unitsCompleted: [],
+          challengesCompleted: 1,
+          lastActivityDate: today,
+        }).returning();
+      } else {
+        const lastActivity = userProgressRecord.lastActivityDate;
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        
+        let newStreakDays = userProgressRecord.streakDays;
+        if (lastActivity === yesterday) {
+          newStreakDays = userProgressRecord.streakDays + 1;
+        } else if (lastActivity !== today) {
+          newStreakDays = 1;
+        }
+        
+        const newXp = userProgressRecord.totalXp + challenge.xpReward;
+        const newChallenges = userProgressRecord.challengesCompleted + 1;
+        const newLongestStreak = Math.max(newStreakDays, userProgressRecord.longestStreak);
+        
+        const { level, progress: levelProgress } = calculateUserLevel(newXp);
+        
+        await db.update(userProgress2)
+          .set({
+            totalXp: newXp,
+            challengesCompleted: newChallenges,
+            streakDays: newStreakDays,
+            longestStreak: newLongestStreak,
+            lastActivityDate: today,
+            level,
+            levelProgress,
+            updatedAt: new Date()
+          })
+          .where(eq(userProgress2.userId, userId));
+      }
+
       res.json({ feedback, progress });
     } catch (error: any) {
       console.error("Challenge analysis error:", error);
       res.status(500).json({ error: error.message });
     }
   });
+  
+  function calculateUserLevel(totalXp: number): { level: number; progress: number } {
+    const xpPerLevel = 100;
+    const level = Math.floor(totalXp / xpPerLevel) + 1;
+    const progress = Math.round((totalXp % xpPerLevel) / xpPerLevel * 100);
+    return { level, progress };
+  }
 
   app.get("/api/case-studies", async (req, res) => {
     try {

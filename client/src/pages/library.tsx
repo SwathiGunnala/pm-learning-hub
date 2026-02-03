@@ -85,9 +85,9 @@ export default function Library() {
   }, [caseStudies]);
 
   return (
-    <div className="space-y-6 p-6 lg:p-8">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Strategy Library</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Strategy Library</h1>
         <p className="text-muted-foreground">
           Learn from {stats.total} real product case studies - {stats.wins} wins, {stats.fails} fails
         </p>
