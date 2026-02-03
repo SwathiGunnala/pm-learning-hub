@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -70,6 +70,7 @@ export default function Dashboard() {
   const [showChallenge, setShowChallenge] = useState(false);
   const [challengeResponse, setChallengeResponse] = useState("");
   const [challengeFeedback, setChallengeFeedback] = useState<AIFeedback | null>(null);
+  const challengeRef = useRef<HTMLDivElement>(null);
   
   const { data: curriculum, isLoading: curriculumLoading } = useQuery<Pillar[]>({
     queryKey: ['/api/curriculum'],
@@ -120,6 +121,10 @@ export default function Dashboard() {
     setShowChallenge(true);
     setChallengeResponse("");
     setChallengeFeedback(null);
+    // Scroll to challenge section after a brief delay for render
+    setTimeout(() => {
+      challengeRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
     trackActivity({
       activityType: "view",
       entityType: "exercise",
@@ -424,7 +429,7 @@ export default function Dashboard() {
       </div>
 
       {showChallenge && dailyChallenge && (
-        <Card className="relative overflow-hidden" data-testid="card-daily-challenge-expanded">
+        <Card ref={challengeRef} className="relative overflow-hidden" data-testid="card-daily-challenge-expanded">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
           <CardHeader>
             <div className="flex items-center justify-between gap-4 flex-wrap">
