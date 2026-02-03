@@ -21,9 +21,9 @@ import type { UserProgress } from "@shared/schema";
 import { levels } from "@shared/schema";
 
 const publicNavItems = [
-  { title: "Strategy Library", url: "/library", icon: Library, requiresAuth: false },
-  { title: "Product Sense Gym", url: "/gym", icon: Dumbbell, requiresAuth: false },
   { title: "Framework Toolkit", url: "/toolkit", icon: Wrench, requiresAuth: false },
+  { title: "Product Sense Gym", url: "/gym", icon: Dumbbell, requiresAuth: false },
+  { title: "Strategy Library", url: "/library", icon: Library, requiresAuth: false },
 ];
 
 const authNavItems = [
