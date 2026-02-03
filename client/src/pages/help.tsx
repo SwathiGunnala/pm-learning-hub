@@ -149,7 +149,7 @@ export default function Help() {
                         <FormLabel>Your Email</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="your@email.com" 
+                            placeholder="e.g. john.doe@company.com" 
                             type="email"
                             {...field} 
                             data-testid="input-support-email" 
@@ -235,7 +235,7 @@ export default function Help() {
                         <FormLabel>Your Email</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="your@email.com" 
+                            placeholder="e.g. john.doe@company.com" 
                             type="email"
                             {...field} 
                             data-testid="input-feedback-email" 
