@@ -27,6 +27,7 @@ import GitHubPage from "@/pages/github";
 import Settings from "@/pages/settings";
 import Support from "@/pages/support";
 import Feedback from "@/pages/feedback";
+import Help from "@/pages/help";
 import Analytics from "@/pages/analytics";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
@@ -48,8 +49,9 @@ function MainRouter() {
       <Route path="/journal" component={user ? Journal : Landing} />
       <Route path="/github" component={user ? GitHubPage : Landing} />
       <Route path="/settings" component={user ? Settings : Landing} />
-      <Route path="/support" component={user ? Support : Landing} />
-      <Route path="/feedback" component={user ? Feedback : Landing} />
+      <Route path="/help" component={user ? Help : Landing} />
+      <Route path="/support" component={user ? Help : Landing} />
+      <Route path="/feedback" component={user ? Help : Landing} />
       <Route path="/analytics" component={user ? Analytics : Landing} />
       <Route component={NotFound} />
     </Switch>

@@ -39,6 +39,7 @@ export const insertUserActivitySchema = createInsertSchema(userActivities).omit(
 export const supportTickets = pgTable("support_tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
+  userEmail: varchar("user_email"),
   subject: varchar("subject").notNull(),
   description: text("description").notNull(),
   category: varchar("category", { enum: ["bug", "feature", "billing", "general"] }).notNull().default("general"),
@@ -55,6 +56,7 @@ export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit
 export const userFeedback = pgTable("user_feedback", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
+  userEmail: varchar("user_email"),
   title: varchar("title").notNull(),
   category: varchar("category", { enum: ["bug", "feature", "ux", "content", "other"] }).notNull().default("other"),
   description: text("description").notNull(),
