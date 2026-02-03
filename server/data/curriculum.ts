@@ -993,6 +993,249 @@ export const curriculum: Pillar[] = [
             ]
           }
         ]
+      },
+      {
+        id: "product-discovery",
+        pillarId: "advanced-leadership",
+        title: "Product Discovery",
+        description: "Validate ideas before building",
+        icon: "Search",
+        order: 3,
+        requiredXp: 125,
+        lessons: [
+          {
+            id: "opportunity-assessment",
+            unitId: "product-discovery",
+            title: "Opportunity Assessment",
+            description: "Evaluate if an idea is worth pursuing",
+            xpReward: 30,
+            durationMinutes: 7,
+            order: 1,
+            content: [
+              { type: "text", content: "Before building anything, you need to assess if the opportunity is real and worth pursuing." },
+              { type: "text", content: "**Opportunity Assessment Framework**:\n1. Problem Clarity: Is the problem real and painful?\n2. Market Size: How many people have this problem?\n3. Willingness to Pay: Will people pay to solve it?\n4. Competitive Landscape: Why haven't others solved it?\n5. Strategic Fit: Does it align with our strengths?" },
+              { type: "example", content: "Dropbox validated demand with a simple video demo before writing code. 75,000 signups overnight proved the opportunity." },
+              { type: "tip", content: "Kill ideas early and cheaply. The cost of validating is tiny compared to building the wrong thing." },
+              { type: "quiz", content: "The best way to validate a product idea is:", options: ["Build an MVP immediately", "Conduct a large survey", "Talk to potential users about their problems", "Copy what competitors are doing"], correctIndex: 2, explanation: "Talking to users reveals whether the problem is real before you invest in solutions." }
+            ]
+          },
+          {
+            id: "hypothesis-testing",
+            unitId: "product-discovery",
+            title: "Hypothesis-Driven Development",
+            description: "Treat every feature as an experiment",
+            xpReward: 30,
+            durationMinutes: 6,
+            order: 2,
+            content: [
+              { type: "text", content: "Every product decision is a hypothesis. Structure them properly to learn faster." },
+              { type: "text", content: "**Hypothesis Template**:\n'We believe [this capability] will result in [this outcome]. We will know we are right when [we see this measurable signal].'" },
+              { type: "example", content: "Hypothesis: 'We believe adding social sharing will increase signups by 20%. We'll know we're right when we see 20% of new users coming from shared links.'" },
+              { type: "tip", content: "Write down your hypothesis before building. If you can't articulate what success looks like, you're not ready to build." },
+              { type: "reflection", content: "Think of a feature you built. What was the implicit hypothesis? Did you validate it?" }
+            ]
+          },
+          {
+            id: "mvp-definition",
+            unitId: "product-discovery",
+            title: "Defining the Right MVP",
+            description: "Build just enough to learn",
+            xpReward: 30,
+            durationMinutes: 7,
+            order: 3,
+            content: [
+              { type: "text", content: "An MVP isn't a crappy v1. It's the smallest thing that tests your riskiest assumption." },
+              { type: "text", content: "**MVP Spectrum**:\n- Fake Door: Button that measures interest\n- Concierge: Do it manually first\n- Wizard of Oz: Human behind the scenes\n- Single-Feature: One thing, done well\n- Functional MVP: Basic working product" },
+              { type: "example", content: "Zapier started as the founders manually connecting apps for customers. They proved demand before automating anything." },
+              { type: "tip", content: "Ask: 'What's the riskiest assumption?' Then build only what tests that assumption." },
+              { type: "quiz", content: "A good MVP should:", options: ["Have all planned features in basic form", "Test the riskiest assumption with minimal effort", "Be ready for thousands of users", "Look polished and professional"], correctIndex: 1, explanation: "MVPs exist to learn, not to impress. Focus on validating your biggest risk." }
+            ]
+          },
+          {
+            id: "pivot-vs-persevere",
+            unitId: "product-discovery",
+            title: "Pivot or Persevere",
+            description: "Know when to change direction",
+            xpReward: 25,
+            durationMinutes: 5,
+            order: 4,
+            content: [
+              { type: "text", content: "Every PM faces this decision: Is it not working yet, or will it never work?" },
+              { type: "text", content: "**Signs to Pivot**:\n- Users don't retain even when they try it\n- No clear path to unit economics\n- Core assumption proven wrong\n- Team has lost conviction" },
+              { type: "text", content: "**Signs to Persevere**:\n- Early users are passionate (even if few)\n- Clear learning with each iteration\n- Market timing might be off, not the idea\n- You haven't truly tested the hypothesis yet" },
+              { type: "example", content: "Slack pivoted from a gaming company. Instagram pivoted from Burbn (location check-ins). Sometimes the pivot is more valuable than the original idea." },
+              { type: "tip", content: "Set 'kill criteria' upfront. Decide what would make you stop before emotions get involved." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "go-to-market",
+        pillarId: "advanced-leadership",
+        title: "Go-to-Market",
+        description: "Launch products that get adopted",
+        icon: "Rocket",
+        order: 4,
+        requiredXp: 175,
+        lessons: [
+          {
+            id: "launch-planning",
+            unitId: "go-to-market",
+            title: "Launch Planning",
+            description: "Coordinate a successful product launch",
+            xpReward: 30,
+            durationMinutes: 8,
+            order: 1,
+            content: [
+              { type: "text", content: "A great product with a bad launch is a missed opportunity. Plan your GTM as carefully as your product." },
+              { type: "text", content: "**Launch Checklist**:\n- Internal: Sales enablement, support training, documentation\n- External: Messaging, positioning, channel strategy\n- Technical: Feature flags, monitoring, rollback plan\n- Measurement: Success metrics, feedback channels" },
+              { type: "example", content: "Apple doesn't just ship products - they orchestrate experiences. Every detail from keynote to unboxing is planned." },
+              { type: "tip", content: "Do a 'launch dry run' with stakeholders. Surface gaps before they become launch-day disasters." },
+              { type: "quiz", content: "The biggest mistake in product launches is:", options: ["Not having enough features", "Not coordinating with go-to-market teams", "Launching too slowly", "Having too much documentation"], correctIndex: 1, explanation: "Features don't matter if sales can't sell it, support can't support it, and marketing can't explain it." }
+            ]
+          },
+          {
+            id: "pricing-fundamentals",
+            unitId: "go-to-market",
+            title: "Pricing Strategy Basics",
+            description: "Price based on value, not cost",
+            xpReward: 30,
+            durationMinutes: 7,
+            order: 2,
+            content: [
+              { type: "text", content: "Pricing is one of the most powerful levers you have. Most companies under-price." },
+              { type: "text", content: "**Pricing Approaches**:\n- Cost-plus: Your cost + margin (worst approach)\n- Competitor-based: Match or undercut (reactive)\n- Value-based: What is it worth to the customer? (best approach)" },
+              { type: "text", content: "**Pricing Psychology**:\n- Anchoring: Show expensive option first\n- Decoy: Add option that makes target look better\n- Bundling: Combine to obscure individual prices" },
+              { type: "example", content: "Salesforce charges per user/month. Their value isn't the software cost - it's the revenue their customers generate using it." },
+              { type: "tip", content: "If no one complains about your price, you're probably too cheap." },
+              { type: "reflection", content: "How is your product priced? Is it based on your costs or your customer's value?" }
+            ]
+          },
+          {
+            id: "beta-programs",
+            unitId: "go-to-market",
+            title: "Running Beta Programs",
+            description: "Get feedback before full launch",
+            xpReward: 25,
+            durationMinutes: 6,
+            order: 3,
+            content: [
+              { type: "text", content: "Betas let you learn from real usage before the stakes are high." },
+              { type: "text", content: "**Beta Program Structure**:\n1. Define goals: What do you want to learn?\n2. Select participants: Who represents your target users?\n3. Set expectations: What's broken, what feedback do you need?\n4. Create feedback loops: Make it easy to report issues\n5. Close the loop: Show participants their impact" },
+              { type: "example", content: "Gmail was in beta for 5 years. Each phase taught them something and created anticipation for public launch." },
+              { type: "tip", content: "Choose beta users who are forgiving of bugs but critical of UX. You want honest feedback, not cheerleaders." },
+              { type: "quiz", content: "The primary goal of a beta program is:", options: ["Free QA testing", "Marketing buzz", "Learning from real usage before full launch", "Rewarding loyal customers"], correctIndex: 2, explanation: "Betas are learning opportunities. Testing and buzz are bonuses, not the goal." }
+            ]
+          },
+          {
+            id: "adoption-strategies",
+            unitId: "go-to-market",
+            title: "Driving Product Adoption",
+            description: "Get users to actually use what you built",
+            xpReward: 30,
+            durationMinutes: 7,
+            order: 4,
+            content: [
+              { type: "text", content: "Shipping isn't success. Adoption is. Most features die from indifference, not rejection." },
+              { type: "text", content: "**Adoption Levers**:\n- Discovery: Can users find it?\n- Understanding: Do they know what it does?\n- Motivation: Do they want to try it?\n- Ability: Can they figure out how?\n- Habit: Will they come back?" },
+              { type: "example", content: "Slack's magic message ('You're all caught up!') reduced anxiety about missing things - removing a barrier to regular use." },
+              { type: "tip", content: "Measure adoption by behavior (did they use it?) not awareness (did they see it?)." },
+              { type: "reflection", content: "Think of a feature that had low adoption. Which lever was broken?" }
+            ]
+          }
+        ]
+      },
+      {
+        id: "product-communications",
+        pillarId: "advanced-leadership",
+        title: "Product Communications",
+        description: "Standard formats for customer communications",
+        icon: "Mail",
+        order: 5,
+        requiredXp: 225,
+        lessons: [
+          {
+            id: "pre-purchase-comms",
+            unitId: "product-communications",
+            title: "Pre-Purchase Communications",
+            description: "Convert prospects into customers",
+            xpReward: 30,
+            durationMinutes: 8,
+            order: 1,
+            content: [
+              { type: "text", content: "Pre-purchase communications should educate, build trust, and reduce friction - not just sell." },
+              { type: "text", content: "**Welcome/Signup Email Template**:\n\nSubject: Welcome to [Product] - Here's how to get started\n\nHi [Name],\n\nThanks for signing up for [Product]. You're joining [X] other [customers/teams] who use us to [key benefit].\n\n**Your next step:** [Single clear CTA]\n\nNeed help? Reply to this email or check our [Help Center].\n\n[Signature]" },
+              { type: "text", content: "**Trial Reminder Email Template**:\n\nSubject: Your [Product] trial ends in [X] days\n\nHi [Name],\n\nYour trial ends [date]. Here's what you've accomplished:\n- [Achievement 1]\n- [Achievement 2]\n\n**To keep access:** [CTA to upgrade]\n\nQuestions? We're here to help.\n\n[Signature]" },
+              { type: "tip", content: "Every pre-purchase email should have exactly ONE call-to-action. Multiple CTAs reduce conversion." },
+              { type: "quiz", content: "The most effective pre-purchase email focuses on:", options: ["All product features", "Discounts and promotions", "One clear next step for the user", "Company history"], correctIndex: 2, explanation: "Clarity beats completeness. One focused CTA outperforms a menu of options." }
+            ]
+          },
+          {
+            id: "post-purchase-comms",
+            unitId: "product-communications",
+            title: "Post-Purchase Communications",
+            description: "Retain and grow customer relationships",
+            xpReward: 30,
+            durationMinutes: 8,
+            order: 2,
+            content: [
+              { type: "text", content: "Post-purchase communications should reinforce the buying decision and drive ongoing value." },
+              { type: "text", content: "**Purchase Confirmation Template**:\n\nSubject: You're in! Here's what happens next\n\nHi [Name],\n\nWelcome to [Product/Plan name]. Your purchase is confirmed.\n\n**What's included:**\n- [Benefit 1]\n- [Benefit 2]\n- [Benefit 3]\n\n**Getting started:**\n1. [First step]\n2. [Second step]\n3. [Third step]\n\n**Your success contact:** [Name/Email]\n\n[Signature]" },
+              { type: "text", content: "**Milestone Celebration Template**:\n\nSubject: Congrats! You just hit [Milestone]\n\nHi [Name],\n\nYou've [achieved milestone]. That puts you in the top [X]% of [Product] users.\n\n**What this means:** [Benefit or insight]\n\n**Your next goal:** [Suggested next step]\n\nKeep it up!\n\n[Signature]" },
+              { type: "text", content: "**Renewal Reminder Template**:\n\nSubject: Your [Product] subscription renews [date]\n\nHi [Name],\n\nJust a heads up - your subscription renews on [date] for [amount].\n\n**This year with [Product]:**\n- [Usage stat 1]\n- [Usage stat 2]\n- [Value delivered]\n\nNo action needed - we'll renew automatically. Questions? Just reply.\n\n[Signature]" },
+              { type: "tip", content: "Celebrate customer wins. It reinforces their decision and builds loyalty." }
+            ]
+          },
+          {
+            id: "product-update-comms",
+            unitId: "product-communications",
+            title: "Product Update Communications",
+            description: "Announce changes that drive adoption",
+            xpReward: 30,
+            durationMinutes: 7,
+            order: 3,
+            content: [
+              { type: "text", content: "Product updates should focus on user benefit, not feature lists. Answer 'What's in it for me?'" },
+              { type: "text", content: "**Feature Announcement Template**:\n\nSubject: New: [Feature] - [One-line benefit]\n\nHi [Name],\n\n**What's new:** [Feature name]\n\n**Why it matters:** [Benefit in user terms]\n\n**How to use it:**\n1. [Step 1]\n2. [Step 2]\n3. [Step 3]\n\n[CTA Button: Try it now]\n\nWe built this because you asked. Thanks for the feedback!\n\n[Signature]" },
+              { type: "text", content: "**Release Notes Template**:\n\n**[Product] [Version] - [Date]**\n\n**Highlights:**\n- [Major change 1]: [Benefit]\n- [Major change 2]: [Benefit]\n\n**Improvements:**\n- [Improvement 1]\n- [Improvement 2]\n\n**Bug Fixes:**\n- Fixed issue where [problem description]\n\n**Coming Soon:** [Teaser for next release]" },
+              { type: "tip", content: "Lead with the 'why' not the 'what'. Users care about their problems, not your features." },
+              { type: "quiz", content: "The best feature announcement email leads with:", options: ["Technical specifications", "How the feature benefits the user", "How long it took to build", "A list of all features"], correctIndex: 1, explanation: "Users don't care about features. They care about what features do for them." }
+            ]
+          },
+          {
+            id: "lifecycle-marketing",
+            unitId: "product-communications",
+            title: "Lifecycle Marketing Communications",
+            description: "Automated messages that nurture customers",
+            xpReward: 30,
+            durationMinutes: 8,
+            order: 4,
+            content: [
+              { type: "text", content: "Lifecycle emails are automated but should feel personal. Map them to the customer journey." },
+              { type: "text", content: "**Onboarding Sequence (Days 1-7):**\n\nDay 1: Welcome + single getting started action\nDay 2: Quick win tutorial\nDay 4: Feature spotlight based on behavior\nDay 7: Check-in + offer help" },
+              { type: "text", content: "**Re-engagement Template**:\n\nSubject: We miss you, [Name]\n\nHi [Name],\n\nIt's been [X] days since you logged into [Product]. We've added some things you might like:\n\n- [New feature 1]\n- [New feature 2]\n\n**One thing to try:** [Specific, easy action]\n\n[CTA: Come back and explore]\n\nIf [Product] isn't right for you anymore, we understand. Reply and tell us what we could do better.\n\n[Signature]" },
+              { type: "text", content: "**NPS/Feedback Request Template**:\n\nSubject: Quick question (takes 30 seconds)\n\nHi [Name],\n\nHow likely are you to recommend [Product] to a colleague?\n\n[0-10 scale with clickable numbers]\n\nYour feedback helps us improve. Thanks!\n\n[Signature]" },
+              { type: "tip", content: "Segment your lifecycle emails by behavior. A power user needs different messages than someone struggling to start." },
+              { type: "reflection", content: "Map out your customer journey. Where are the drop-off points that need communication?" }
+            ]
+          },
+          {
+            id: "crisis-comms",
+            unitId: "product-communications",
+            title: "Incident & Crisis Communications",
+            description: "Communicate when things go wrong",
+            xpReward: 25,
+            durationMinutes: 6,
+            order: 5,
+            content: [
+              { type: "text", content: "How you communicate during problems defines your brand more than when things go well." },
+              { type: "text", content: "**Incident Notification Template**:\n\nSubject: [Product] Service Issue - [Status]\n\nHi [Name],\n\n**What's happening:** [Clear, non-technical description]\n\n**Impact:** [Who is affected and how]\n\n**What we're doing:** [Actions being taken]\n\n**Next update:** [Time]\n\nWe apologize for the inconvenience. Updates will be posted at [status page URL].\n\n[Signature]" },
+              { type: "text", content: "**Resolution Template**:\n\nSubject: Resolved: [Product] Service Issue\n\nHi [Name],\n\nThe issue affecting [description] has been resolved as of [time].\n\n**What happened:** [Root cause in plain language]\n\n**What we're doing to prevent this:** [Concrete actions]\n\nWe're sorry for the disruption. If you have questions, please reach out.\n\n[Signature]" },
+              { type: "tip", content: "Over-communicate during incidents. Silence breeds anxiety and erodes trust." },
+              { type: "quiz", content: "During a service outage, the first communication should:", options: ["Wait until you have all the details", "Acknowledge the issue immediately with what you know", "Blame the vendor", "Send a marketing email instead"], correctIndex: 1, explanation: "Acknowledge quickly. 'We're aware and investigating' is better than silence." }
+            ]
+          }
+        ]
       }
     ]
   }
