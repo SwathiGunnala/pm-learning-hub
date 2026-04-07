@@ -265,6 +265,19 @@ export const levelConfigSchema = z.object({
 
 export type LevelConfig = z.infer<typeof levelConfigSchema>;
 
+export const referrals = pgTable("referrals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  referrerId: varchar("referrer_id").notNull(),
+  referredId: varchar("referred_id"),
+  code: varchar("code").notNull().unique(),
+  status: varchar("status", { enum: ["pending", "claimed"] }).notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+  claimedAt: timestamp("claimed_at"),
+});
+
+export type Referral = typeof referrals.$inferSelect;
+export type InsertReferral = typeof referrals.$inferInsert;
+
 export const levels: LevelConfig[] = [
   { level: 1, title: "PM Curious", xpRequired: 0 },
   { level: 2, title: "PM Apprentice", xpRequired: 100 },

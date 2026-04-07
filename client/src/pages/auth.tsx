@@ -118,6 +118,8 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const refCode = new URLSearchParams(window.location.search).get("ref");
+
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -134,6 +136,15 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
       apiRequest("POST", "/api/auth/register", data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      if (refCode) {
+        try {
+          const resp = await apiRequest("POST", "/api/referral/claim", { code: refCode });
+          const body = await resp.json();
+          if (body.success) {
+            toast({ title: "Referral applied!", description: "Your friend earned 50 bonus XP." });
+          }
+        } catch {}
+      }
       onSuccess();
     },
     onError: async (err: any) => {

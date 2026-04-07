@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Zap, Trophy, Settings, HelpCircle, LogIn } from "lucide-react";
+import { Home, Library, Dumbbell, Wrench, BookOpen, Flame, Zap, Trophy, Settings, HelpCircle, LogIn, Medal } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +29,7 @@ const publicNavItems = [
 const authNavItems = [
   { title: "Dashboard", url: "/", icon: Home, requiresAuth: true },
   { title: "Learning Journal", url: "/journal", icon: BookOpen, requiresAuth: true },
+  { title: "Leaderboard", url: "/leaderboard", icon: Medal, requiresAuth: true },
 ];
 
 const settingsItems = [

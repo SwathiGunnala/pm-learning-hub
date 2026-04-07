@@ -31,6 +31,7 @@ import Help from "@/pages/help";
 import Analytics from "@/pages/analytics";
 import Landing from "@/pages/landing";
 import AuthPage from "@/pages/auth";
+import Leaderboard from "@/pages/leaderboard";
 import NotFound from "@/pages/not-found";
 import { usePageTracking, useSessionTracking } from "@/hooks/use-activity";
 import type { UserProgress2 } from "@shared/schema";
@@ -55,6 +56,7 @@ function MainRouter() {
       <Route path="/support" component={user ? Help : Landing} />
       <Route path="/feedback" component={user ? Help : Landing} />
       <Route path="/analytics" component={user ? Analytics : Landing} />
+      <Route path="/leaderboard" component={Leaderboard} />
       <Route component={NotFound} />
     </Switch>
   );

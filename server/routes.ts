@@ -8,7 +8,8 @@ import { execSync } from "child_process";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { db, getConnectionStats } from "./db";
-import { subscriptions, userActivities, supportTickets, userProgress2, userFeedback, notifications, insertUserFeedbackSchema, users } from "@shared/schema";
+import { subscriptions, userActivities, supportTickets, userProgress2, userFeedback, notifications, insertUserFeedbackSchema, users, referrals } from "@shared/schema";
+import { getUncachableStripeClient } from "./stripeClient";
 import { eq, desc, sql, count, gte, and } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -922,6 +923,211 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .orderBy(desc(sql`AVG((${userActivities.metadata}->>'seconds')::numeric)`));
 
       res.json(timeData);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ── Stripe Routes ──────────────────────────────────────────────────────────
+
+  app.get("/api/stripe/products", async (_req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT
+          p.id as product_id,
+          p.name as product_name,
+          p.description as product_description,
+          p.metadata as product_metadata,
+          pr.id as price_id,
+          pr.unit_amount,
+          pr.currency,
+          pr.recurring
+        FROM stripe.products p
+        LEFT JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
+        WHERE p.active = true
+        ORDER BY pr.unit_amount ASC
+      `);
+      const productsMap = new Map<string, any>();
+      for (const row of result.rows as any[]) {
+        if (!productsMap.has(row.product_id)) {
+          productsMap.set(row.product_id, {
+            id: row.product_id,
+            name: row.product_name,
+            description: row.product_description,
+            metadata: row.product_metadata,
+            prices: [],
+          });
+        }
+        if (row.price_id) {
+          productsMap.get(row.product_id).prices.push({
+            id: row.price_id,
+            unitAmount: row.unit_amount,
+            currency: row.currency,
+            recurring: row.recurring,
+          });
+        }
+      }
+      res.json({ data: Array.from(productsMap.values()) });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/stripe/checkout", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { priceId } = req.body;
+      if (!priceId) return res.status(400).json({ error: "priceId required" });
+
+      const [userRow] = await db.select().from(users).where(eq(users.id, userId));
+      if (!userRow) return res.status(404).json({ error: "User not found" });
+
+      const stripe = await getUncachableStripeClient();
+
+      let stripeCustomerId = userRow.stripeCustomerId;
+      if (!stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          email: userRow.email || undefined,
+          metadata: { userId },
+        });
+        await db.update(users).set({ stripeCustomerId: customer.id }).where(eq(users.id, userId));
+        stripeCustomerId = customer.id;
+      }
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomerId,
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: 'subscription',
+        success_url: `${baseUrl}/settings?checkout=success`,
+        cancel_url: `${baseUrl}/settings?checkout=cancel`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/stripe/portal", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const [userRow] = await db.select().from(users).where(eq(users.id, userId));
+      if (!userRow?.stripeCustomerId) {
+        return res.status(400).json({ error: "No billing account found" });
+      }
+      const stripe = await getUncachableStripeClient();
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: userRow.stripeCustomerId,
+        return_url: `${baseUrl}/settings`,
+      });
+      res.json({ url: portalSession.url });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ── Leaderboard ─────────────────────────────────────────────────────────────
+
+  app.get("/api/leaderboard", async (_req, res) => {
+    try {
+      const rows = await db
+        .select({
+          id: userProgress2.userId,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          totalXp: userProgress2.totalXp,
+          level: userProgress2.level,
+          streakDays: userProgress2.streakDays,
+          lessonsCompleted: userProgress2.lessonsCompleted,
+        })
+        .from(userProgress2)
+        .leftJoin(users, eq(userProgress2.userId, users.id))
+        .orderBy(desc(userProgress2.totalXp))
+        .limit(50);
+      res.json(rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ── Referrals ────────────────────────────────────────────────────────────────
+
+  function generateReferralCode(userId: string): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const base = userId.replace(/-/g, '').slice(0, 6).toUpperCase();
+    let suffix = '';
+    for (let i = 0; i < 4; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+    return `PLH-${base}${suffix}`;
+  }
+
+  app.get("/api/referral/code", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const [existing] = await db.select().from(referrals)
+        .where(and(eq(referrals.referrerId, userId), eq(referrals.status, "pending")));
+      if (existing) return res.json({ code: existing.code });
+
+      let code = generateReferralCode(userId);
+      let attempts = 0;
+      while (attempts < 10) {
+        const [conflict] = await db.select().from(referrals).where(eq(referrals.code, code));
+        if (!conflict) break;
+        code = generateReferralCode(userId);
+        attempts++;
+      }
+
+      const [newRef] = await db.insert(referrals).values({
+        referrerId: userId,
+        code,
+        status: "pending",
+      }).returning();
+      res.json({ code: newRef.code });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/referral/claim", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { code } = req.body;
+      if (!code) return res.status(400).json({ error: "code required" });
+
+      const [referral] = await db.select().from(referrals).where(eq(referrals.code, code));
+      if (!referral) return res.status(404).json({ error: "Invalid referral code" });
+      if (referral.status === "claimed") return res.status(400).json({ error: "Code already used" });
+      if (referral.referrerId === userId) return res.status(400).json({ error: "Cannot use your own referral code" });
+
+      await db.update(referrals).set({
+        referredId: userId,
+        status: "claimed",
+        claimedAt: new Date(),
+      }).where(eq(referrals.code, code));
+
+      // Award 50 XP bonus to referrer
+      await db.execute(sql`
+        UPDATE user_progress SET total_xp = total_xp + 50
+        WHERE user_id = ${referral.referrerId}
+      `);
+
+      res.json({ success: true, message: "Referral code claimed! Your friend earned 50 XP." });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/referral/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const myReferrals = await db.select().from(referrals)
+        .where(eq(referrals.referrerId, userId));
+      const claimed = myReferrals.filter(r => r.status === "claimed").length;
+      const [myCode] = myReferrals.filter(r => r.status === "pending");
+      res.json({ total: myReferrals.length, claimed, code: myCode?.code || null });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
