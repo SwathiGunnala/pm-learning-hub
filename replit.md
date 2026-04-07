@@ -1,4 +1,4 @@
-# PM Learning Hub
+# Product Learning Hub
 
 ## Overview
 

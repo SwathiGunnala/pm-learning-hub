@@ -1,6 +1,6 @@
 {
-  "name": "PM Learning Hub",
-  "short_name": "PM Hub",
+  "name": "Product Learning Hub",
+  "short_name": "PLHub",
   "description": "Develop your product sense through interactive exercises, case studies, and frameworks",
   "start_url": "/",
   "display": "standalone",

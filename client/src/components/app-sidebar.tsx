@@ -60,7 +60,7 @@ export function AppSidebar() {
               <Dumbbell className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-semibold text-lg">PM Learning Hub</h1>
+              <h1 className="font-semibold text-lg">Product Learning Hub</h1>
               <p className="text-xs text-muted-foreground">Build your product sense</p>
             </div>
           </div>
@@ -172,9 +172,9 @@ export function AppSidebar() {
               </p>
             </div>
             <Button asChild className="w-full" data-testid="button-sidebar-login">
-              <a href="/api/login">
+              <a href="/auth">
                 <LogIn className="mr-2 h-4 w-4" />
-                Sign In with Replit
+                Sign In
               </a>
             </Button>
           </div>

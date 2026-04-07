@@ -30,6 +30,7 @@ import Feedback from "@/pages/feedback";
 import Help from "@/pages/help";
 import Analytics from "@/pages/analytics";
 import Landing from "@/pages/landing";
+import AuthPage from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import { usePageTracking, useSessionTracking } from "@/hooks/use-activity";
 import type { UserProgress2 } from "@shared/schema";
@@ -42,6 +43,7 @@ function MainRouter() {
   return (
     <Switch>
       <Route path="/" component={user ? Dashboard : Landing} />
+      <Route path="/auth" component={AuthPage} />
       <Route path="/learn/:id" component={LessonPage} />
       <Route path="/library" component={Library} />
       <Route path="/gym" component={Gym} />
@@ -104,7 +106,7 @@ function MainApp() {
                   <NotificationsDropdown />
                 ) : (
                   <Button asChild size="sm" data-testid="button-header-login">
-                    <a href="/api/login">
+                    <a href="/auth">
                       <LogIn className="mr-2 h-4 w-4" />
                       Sign In
                     </a>

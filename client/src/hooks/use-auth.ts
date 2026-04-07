@@ -18,8 +18,8 @@ async function fetchUser(): Promise<User | null> {
   return response.json();
 }
 
-async function logout(): Promise<void> {
-  window.location.href = "/api/logout";
+async function logoutRequest(): Promise<void> {
+  await fetch("/api/logout", { method: "POST", credentials: "include" });
 }
 
 export function useAuth() {
@@ -28,7 +28,7 @@ export function useAuth() {
     queryKey: ["/api/auth/user"],
     queryFn: fetchUser,
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
   useEffect(() => {
@@ -42,9 +42,11 @@ export function useAuth() {
   }, [refetch, queryClient]);
 
   const logoutMutation = useMutation({
-    mutationFn: logout,
+    mutationFn: logoutRequest,
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.clear();
+      window.location.href = "/";
     },
   });
 

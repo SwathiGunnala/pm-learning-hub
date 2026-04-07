@@ -8,7 +8,7 @@ export function BetaBanner() {
 
   return (
     <div className="bg-primary text-primary-foreground px-4 py-2 text-center text-sm flex items-center justify-center gap-2 relative" data-testid="banner-beta">
-      <span className="font-medium">Welcome to PM Learning Hub Beta!</span>
+      <span className="font-medium">Welcome to Product Learning Hub Beta!</span>
       <span className="hidden sm:inline">We'd love your feedback as we build the best PM learning experience.</span>
       <button
         onClick={() => setDismissed(true)}

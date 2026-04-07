@@ -36,10 +36,10 @@ export default function Landing() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">PM Learning Hub</span>
+            <span className="font-bold text-xl">Product Learning Hub</span>
           </div>
           <Button asChild data-testid="button-login">
-            <a href="/api/login">Log In</a>
+            <a href="/auth">Log In</a>
           </Button>
         </div>
       </header>
@@ -56,7 +56,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild data-testid="button-get-started">
-                <a href="/api/login">
+                <a href="/auth">
                   Get Started Free
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </a>
@@ -82,34 +82,35 @@ export default function Landing() {
 
         <section className="py-16 px-4">
           <div className="container mx-auto max-w-4xl">
-            <h2 className="text-2xl font-bold text-center mb-4">Simple, transparent pricing</h2>
-            <p className="text-center text-muted-foreground mb-12">Start free, upgrade when you're ready</p>
-            <div className="grid md:grid-cols-2 gap-8">
+            <h2 className="text-2xl font-bold text-center mb-12">Simple, transparent pricing</h2>
+            <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
               {plans.map((plan) => (
-                <Card key={plan.name} className={`p-6 ${plan.popular ? "border-primary ring-2 ring-primary/20" : ""}`}>
+                <Card key={plan.name} className={`p-6 relative ${plan.popular ? "ring-2 ring-primary" : ""}`}>
                   {plan.popular && (
-                    <Badge className="mb-4">Most Popular</Badge>
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
                   )}
-                  <h3 className="text-xl font-bold">{plan.name}</h3>
-                  <div className="mt-4 mb-6">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
+                  <div className="mb-6">
+                    <h3 className="font-bold text-lg">{plan.name}</h3>
+                    <div className="flex items-baseline gap-1 mt-2">
+                      <span className="text-3xl font-bold">{plan.price}</span>
+                      <span className="text-muted-foreground">{plan.period}</span>
+                    </div>
                   </div>
                   <ul className="space-y-3 mb-6">
                     {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">{feature}</span>
+                      <li key={feature} className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                        {feature}
                       </li>
                     ))}
                   </ul>
-                  <Button 
-                    variant={plan.popular ? "default" : "outline"} 
+                  <Button
                     className="w-full"
+                    variant={plan.popular ? "default" : "outline"}
                     asChild
                     data-testid={`button-plan-${plan.name.toLowerCase()}`}
                   >
-                    <a href="/api/login">{plan.cta}</a>
+                    <a href="/auth">{plan.cta}</a>
                   </Button>
                 </Card>
               ))}
@@ -120,7 +121,7 @@ export default function Landing() {
 
       <footer className="border-t py-8 px-4">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
-          <p>PM Learning Hub - Build your product sense, one lesson at a time.</p>
+          <p>Product Learning Hub - Build your product sense, one lesson at a time.</p>
         </div>
       </footer>
     </div>

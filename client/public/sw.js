@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pm-learning-hub-v1';
+const CACHE_NAME = 'product-learning-hub-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

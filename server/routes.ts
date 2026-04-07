@@ -40,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/subscription", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const [subscription] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId));
       if (!subscription) {
         const [newSub] = await db.insert(subscriptions).values({ userId, plan: "free" }).returning();
@@ -54,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/user-progress-db", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       let [progress] = await db.select().from(userProgress2).where(eq(userProgress2.userId, userId));
       if (!progress) {
         [progress] = await db.insert(userProgress2).values({ 
@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/onboarding/complete", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const { experienceLevel } = onboardingSchema.parse(req.body);
       
       let [existing] = await db.select().from(userProgress2).where(eq(userProgress2.userId, userId));
@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/user-settings", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const parsed = userSettingsSchema.parse(req.body);
       const [updated] = await db.update(userProgress2)
         .set({ ...parsed, updatedAt: new Date() })
@@ -145,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/activity", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const { activityType, entityType, entityId, metadata } = req.body;
       const [activity] = await db.insert(userActivities).values({
         userId, activityType, entityType, entityId, metadata
@@ -158,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/activities", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const activities = await db.select().from(userActivities)
         .where(eq(userActivities.userId, userId))
         .orderBy(desc(userActivities.createdAt));
@@ -170,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tickets", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const tickets = await db.select().from(supportTickets)
         .where(eq(supportTickets.userId, userId))
         .orderBy(desc(supportTickets.createdAt));
@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tickets", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const data = insertSupportTicketSchema.parse({ ...req.body, userId });
       const [ticket] = await db.insert(supportTickets).values(data).returning();
       res.json(ticket);
@@ -193,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/feedback", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const feedbackList = await db.select().from(userFeedback)
         .where(eq(userFeedback.userId, userId))
         .orderBy(desc(userFeedback.createdAt));
@@ -205,7 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/feedback", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const data = insertUserFeedbackSchema.parse({ ...req.body, userId });
       const [feedback] = await db.insert(userFeedback).values(data).returning();
       res.json(feedback);
@@ -216,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/notifications", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const notificationList = await db.select().from(notifications)
         .where(eq(notifications.userId, userId))
         .orderBy(desc(notifications.createdAt));
@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/notifications/:id/read", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const { id } = req.params;
       const [notification] = await db.select().from(notifications)
         .where(eq(notifications.id, id));
@@ -247,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/notifications/mark-all-read", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       await db.update(notifications)
         .set({ readAt: new Date() })
         .where(eq(notifications.userId, userId));
@@ -266,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("ADMIN_USER_IDS not configured");
       return res.status(503).json({ error: "Admin access not configured" });
     }
-    const userId = req.user?.claims?.sub;
+    const userId = (req.user as any)?.id;
     if (!userId || !ADMIN_USER_IDS.includes(userId)) {
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -386,7 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/daily-challenge/submit", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const challenge = await storage.getTodaysChallenge();
       const { response } = req.body;
       
@@ -679,7 +679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let repoUrl: string;
 
       if (isNewRepo) {
-        const repo = await createRepository(repoName, description || "PM Learning Hub - Product Learning Platform", isPrivate);
+        const repo = await createRepository(repoName, description || "Product Learning Hub - Product Learning Platform", isPrivate);
         repoUrl = repo.html_url;
       } else {
         repoUrl = `https://github.com/${user.login}/${repoName}`;
@@ -698,7 +698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       execSync('git add -A', { stdio: 'pipe' });
       
       try {
-        execSync('git commit -m "Update: PM Learning Hub"', { stdio: 'pipe' });
+        execSync('git commit -m "Update: Product Learning Hub"', { stdio: 'pipe' });
       } catch (e) {}
 
       const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;

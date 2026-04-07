@@ -219,7 +219,7 @@ export default function Gym() {
                       Sign in to get personalized AI feedback on your response
                     </p>
                     <Button asChild className="w-full" data-testid="button-login-for-feedback">
-                      <a href="/api/login">
+                      <a href="/auth">
                         <LogIn className="mr-2 h-4 w-4" />
                         Sign In to Get Feedback
                       </a>

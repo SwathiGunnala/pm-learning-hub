@@ -99,7 +99,7 @@ export default function Feedback() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold" data-testid="text-feedback-title">Feedback</h1>
-          <p className="text-muted-foreground">Help us improve PM Learning Hub with your suggestions and bug reports.</p>
+          <p className="text-muted-foreground">Help us improve Product Learning Hub with your suggestions and bug reports.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -233,7 +233,7 @@ export default function Feedback() {
           <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="font-medium mb-2">No feedback submitted yet</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Have an idea to improve PM Learning Hub? Found a bug? We'd love to hear from you!
+            Have an idea to improve Product Learning Hub? Found a bug? We'd love to hear from you!
           </p>
           <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-first-feedback">
             Submit Your First Feedback
