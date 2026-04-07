@@ -932,42 +932,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/stripe/products", async (_req, res) => {
     try {
-      const result = await db.execute(sql`
-        SELECT
-          p.id as product_id,
-          p.name as product_name,
-          p.description as product_description,
-          p.metadata as product_metadata,
-          pr.id as price_id,
-          pr.unit_amount,
-          pr.currency,
-          pr.recurring
-        FROM stripe.products p
-        LEFT JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
-        WHERE p.active = true
-        ORDER BY pr.unit_amount ASC
-      `);
-      const productsMap = new Map<string, any>();
-      for (const row of result.rows as any[]) {
-        if (!productsMap.has(row.product_id)) {
-          productsMap.set(row.product_id, {
-            id: row.product_id,
-            name: row.product_name,
-            description: row.product_description,
-            metadata: row.product_metadata,
-            prices: [],
-          });
-        }
-        if (row.price_id) {
-          productsMap.get(row.product_id).prices.push({
-            id: row.price_id,
-            unitAmount: row.unit_amount,
-            currency: row.currency,
-            recurring: row.recurring,
-          });
-        }
-      }
-      res.json({ data: Array.from(productsMap.values()) });
+      const stripe = await getUncachableStripeClient();
+      const products = await stripe.products.list({ active: true, expand: ['data.default_price'] });
+      const result = await Promise.all(
+        products.data.map(async (product) => {
+          const prices = await stripe.prices.list({ product: product.id, active: true });
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            metadata: product.metadata,
+            prices: prices.data.map(p => ({
+              id: p.id,
+              unitAmount: p.unit_amount,
+              currency: p.currency,
+              recurring: p.recurring,
+            })),
+          };
+        })
+      );
+      res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
